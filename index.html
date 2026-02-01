@@ -1053,6 +1053,478 @@ const results = await db.query('SELECT * FROM financial_records');
         </div>
       </section>
 
+      <!-- =============== DEMO SETUP: ENTRA EXTERNAL ID + LOCAL DOCKER =============== -->
+      <section id="demo-setup" class="fade-section mb-16">
+        <div class="section-card bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/50 rounded-2xl p-6 md:p-10 shadow-sm">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-white text-lg">🧪</div>
+            <div>
+              <h2 class="font-display font-800 text-2xl md:text-3xl">Hands-On Demo Setup</h2>
+              <p class="text-sm text-surface-500 dark:text-surface-400 font-mono">Personal Azure + local Docker Compose</p>
+            </div>
+          </div>
+
+          <p class="text-surface-600 dark:text-surface-300 leading-relaxed mb-6">
+            This section walks you through building a <strong>fully working demo environment</strong> on your personal Azure account (free tier) and a local Docker Compose stack. You'll use <strong>Microsoft Entra External ID</strong> — Microsoft's modern CIAM platform — as the upstream identity provider, Keycloak as the broker, a Node.js API, and two demo client apps that prove SSO and RBAC end-to-end.
+          </p>
+
+          <!-- What is Entra External ID -->
+          <div class="bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-700/40 rounded-xl p-5 mb-8">
+            <h3 class="font-display font-bold text-sky-800 dark:text-sky-300 mb-3 text-lg">What is Microsoft Entra External ID?</h3>
+            <p class="text-sm text-surface-700 dark:text-surface-300 leading-relaxed mb-3">
+              Entra External ID is Microsoft's next-generation <strong>Customer Identity & Access Management (CIAM)</strong> solution, replacing Azure AD B2C. It creates a separate <em>external tenant</em> — isolated from your workforce directory — designed specifically for consumer and partner-facing apps.
+            </p>
+            <div class="grid sm:grid-cols-2 gap-3 mt-4 text-xs">
+              <div class="bg-white/60 dark:bg-surface-800/60 rounded-lg p-3 border border-sky-100 dark:border-white/10">
+                <span class="font-bold text-sky-700 dark:text-sky-400 block mb-1">Free Tier</span>
+                <span class="text-surface-600 dark:text-surface-400">50,000 MAU free. No credit card required for trial. Perfect for development and demos.</span>
+              </div>
+              <div class="bg-white/60 dark:bg-surface-800/60 rounded-lg p-3 border border-sky-100 dark:border-white/10">
+                <span class="font-bold text-sky-700 dark:text-sky-400 block mb-1">External Tenant</span>
+                <span class="text-surface-600 dark:text-surface-400">A dedicated directory for customer/partner identities, completely separate from your workforce (Entra ID) tenant.</span>
+              </div>
+              <div class="bg-white/60 dark:bg-surface-800/60 rounded-lg p-3 border border-sky-100 dark:border-white/10">
+                <span class="font-bold text-sky-700 dark:text-sky-400 block mb-1">User Flows</span>
+                <span class="text-surface-600 dark:text-surface-400">Built-in sign-up/sign-in flows with customizable branding, MFA, and social provider federation (Google, Facebook, Apple, custom OIDC).</span>
+              </div>
+              <div class="bg-white/60 dark:bg-surface-800/60 rounded-lg p-3 border border-sky-100 dark:border-white/10">
+                <span class="font-bold text-sky-700 dark:text-sky-400 block mb-1">OIDC Standard</span>
+                <span class="text-surface-600 dark:text-surface-400">Fully OIDC-compliant. Keycloak can federate with it using the standard discovery endpoint — no special SDK needed.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Prerequisites -->
+          <h3 class="font-display font-bold text-lg mb-3 text-surface-800 dark:text-surface-200">Prerequisites</h3>
+          <div class="grid sm:grid-cols-3 gap-3 mb-8 text-sm">
+            <div class="flex items-start gap-2 bg-surface-50 dark:bg-surface-800/60 rounded-lg p-3 border border-surface-200 dark:border-surface-700/50">
+              <span class="shrink-0 mt-0.5">🔑</span>
+              <div><strong class="text-surface-800 dark:text-surface-200">Azure Account</strong><br><span class="text-surface-500 dark:text-surface-400">Free account at azure.microsoft.com. Any personal Microsoft account works.</span></div>
+            </div>
+            <div class="flex items-start gap-2 bg-surface-50 dark:bg-surface-800/60 rounded-lg p-3 border border-surface-200 dark:border-surface-700/50">
+              <span class="shrink-0 mt-0.5">🐳</span>
+              <div><strong class="text-surface-800 dark:text-surface-200">Docker Desktop</strong><br><span class="text-surface-500 dark:text-surface-400">Docker + Docker Compose. WSL2 on Windows or native on macOS/Linux.</span></div>
+            </div>
+            <div class="flex items-start gap-2 bg-surface-50 dark:bg-surface-800/60 rounded-lg p-3 border border-surface-200 dark:border-surface-700/50">
+              <span class="shrink-0 mt-0.5">💻</span>
+              <div><strong class="text-surface-800 dark:text-surface-200">Node.js 18+</strong><br><span class="text-surface-500 dark:text-surface-400">For optional local development. Docker images include Node runtime.</span></div>
+            </div>
+          </div>
+
+          <!-- PART A: Entra External ID Setup -->
+          <div class="mb-10">
+            <div class="flex items-center gap-2 mb-4">
+              <span class="phase-badge inline-flex items-center gap-1.5 bg-sky-500 text-white text-xs font-bold px-3 py-1 rounded-full font-mono">PART A</span>
+              <h3 class="font-display font-bold text-xl text-surface-800 dark:text-surface-200">Entra External ID — Azure Portal Setup</h3>
+            </div>
+
+            <!-- Step A1 -->
+            <div class="ml-2 border-l-2 border-sky-200 dark:border-sky-800 pl-5 pb-6 relative">
+              <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-sky-500 border-2 border-white dark:border-surface-800"></div>
+              <h4 class="font-display font-bold text-surface-800 dark:text-surface-200 mb-1">Step A1 — Create an External Tenant</h4>
+              <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-2">
+                Sign in to <code class="font-mono text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded">https://entra.microsoft.com</code>. Navigate to <strong>Entra ID → Overview → Manage tenants → + Create</strong>. Select <strong>"External"</strong> and continue. Enter a Tenant Name (e.g., <code class="font-mono text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded">MyDemo Customers</code>) and a unique domain prefix (e.g., <code class="font-mono text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded">mydemocustomers</code>). Click <strong>Review + Create</strong>. Provisioning takes up to 30 minutes.
+              </p>
+              <div class="bg-amber-50 dark:bg-amber-900/25 border border-amber-200 dark:border-amber-700/40 rounded-lg p-3 text-xs text-amber-800 dark:text-amber-200">
+                ⚠️ <strong>Tenant types matter:</strong> A <em>Workforce</em> tenant is for employees (traditional Azure AD). An <em>External</em> tenant is the new Entra External ID — it gets self-service sign-up flows and customizable branded sign-in pages. Make sure you select <strong>External</strong>.
+              </div>
+            </div>
+
+            <!-- Step A2 -->
+            <div class="ml-2 border-l-2 border-sky-200 dark:border-sky-800 pl-5 pb-6 relative">
+              <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-sky-500 border-2 border-white dark:border-surface-800"></div>
+              <h4 class="font-display font-bold text-surface-800 dark:text-surface-200 mb-1">Step A2 — Switch to the External Tenant & Run the Guide</h4>
+              <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed">
+                Once created, use the <strong>Settings → Directories + Subscriptions</strong> menu to switch to your new external tenant. Browse to <strong>Entra ID → Overview → Get started → Start the guide</strong>. The wizard walks you through choosing sign-in methods (Email + password or Email + OTP), adding custom attributes, and branding. Choose <strong>Email and password</strong> for simplicity. Complete a test sign-up with a different email from your admin account.
+              </p>
+            </div>
+
+            <!-- Step A3 -->
+            <div class="ml-2 border-l-2 border-sky-200 dark:border-sky-800 pl-5 pb-6 relative">
+              <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-sky-500 border-2 border-white dark:border-surface-800"></div>
+              <h4 class="font-display font-bold text-surface-800 dark:text-surface-200 mb-1">Step A3 — Register Two App Registrations</h4>
+              <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-2">
+                Navigate to <strong>App registrations → + New registration</strong>. Create two applications:
+              </p>
+              <div class="grid sm:grid-cols-2 gap-3 text-xs">
+                <div class="bg-surface-50 dark:bg-surface-800/60 rounded-lg p-3 border border-surface-200 dark:border-surface-700/50">
+                  <strong class="text-sky-700 dark:text-sky-400 block mb-1">1. Keycloak-Broker</strong>
+                  <span class="text-surface-600 dark:text-surface-400">
+                    Supported account types: <em>"Accounts in this organizational directory only"</em>.<br>
+                    Redirect URI (Web): <code class="bg-surface-100 dark:bg-surface-700 px-1 rounded">http://localhost:8080/realms/demo/broker/entra-external/endpoint</code><br>
+                    Note the <strong>Application (client) ID</strong> and <strong>Directory (tenant) ID</strong>.
+                  </span>
+                </div>
+                <div class="bg-surface-50 dark:bg-surface-800/60 rounded-lg p-3 border border-surface-200 dark:border-surface-700/50">
+                  <strong class="text-sky-700 dark:text-sky-400 block mb-1">2. Demo-SPA-Client</strong>
+                  <span class="text-surface-600 dark:text-surface-400">
+                    Supported account types: <em>"Accounts in this organizational directory only"</em>.<br>
+                    Redirect URI (SPA): <code class="bg-surface-100 dark:bg-surface-700 px-1 rounded">http://localhost:3001/callback</code><br>
+                    Enable <strong>Access tokens</strong> and <strong>ID tokens</strong> under Authentication → Implicit grant.
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step A4 -->
+            <div class="ml-2 border-l-2 border-sky-200 dark:border-sky-800 pl-5 pb-6 relative">
+              <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-sky-500 border-2 border-white dark:border-surface-800"></div>
+              <h4 class="font-display font-bold text-surface-800 dark:text-surface-200 mb-1">Step A4 — Create Client Secret for Keycloak-Broker</h4>
+              <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed">
+                Open the <strong>Keycloak-Broker</strong> app → <strong>Certificates &amp; secrets → + New client secret</strong>. Description: <code class="font-mono text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded">keycloak-demo-secret</code>, expiry: 6 months. Copy the <strong>Value</strong> immediately — you won't see it again. Save it to your <code class="font-mono text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded">.env</code> file.
+              </p>
+            </div>
+
+            <!-- Step A5 -->
+            <div class="ml-2 border-l-2 border-sky-200 dark:border-sky-800 pl-5 pb-6 relative">
+              <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-sky-500 border-2 border-white dark:border-surface-800"></div>
+              <h4 class="font-display font-bold text-surface-800 dark:text-surface-200 mb-1">Step A5 — Configure API Permissions</h4>
+              <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed">
+                On the <strong>Keycloak-Broker</strong> app → <strong>API permissions → + Add a permission → Microsoft Graph (Delegated)</strong>. Add: <code class="font-mono text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded">openid</code>, <code class="font-mono text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded">profile</code>, <code class="font-mono text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded">email</code>, <code class="font-mono text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded">offline_access</code>. Click <strong>"Grant admin consent"</strong>.
+              </p>
+            </div>
+
+            <!-- Step A6 -->
+            <div class="ml-2 border-l-2 border-sky-200 dark:border-sky-800 pl-5 pb-6 relative">
+              <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-sky-500 border-2 border-white dark:border-surface-800"></div>
+              <h4 class="font-display font-bold text-surface-800 dark:text-surface-200 mb-1">Step A6 — Create a User Flow</h4>
+              <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-2">
+                Go to <strong>External Identities → User flows → + New user flow</strong>. Name: <code class="font-mono text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded">demo-signup-signin</code>. Select <strong>Email with password</strong>. Optionally collect Name and City attributes. Click <strong>Create</strong>.
+              </p>
+              <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed">
+                Then open the flow → <strong>Applications → + Add application</strong> → select both <strong>Keycloak-Broker</strong> and <strong>Demo-SPA-Client</strong>. This binds the sign-in experience to your registered apps.
+              </p>
+            </div>
+
+            <!-- Step A7 -->
+            <div class="ml-2 border-l-2 border-sky-200 dark:border-sky-800 pl-5 relative">
+              <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-sky-500 border-2 border-white dark:border-surface-800"></div>
+              <h4 class="font-display font-bold text-surface-800 dark:text-surface-200 mb-1">Step A7 — Note Your Discovery Endpoint</h4>
+              <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-2">
+                Your External ID OIDC discovery URL follows this pattern:
+              </p>
+              <div class="code-block bg-surface-900 dark:bg-surface-950 text-surface-100 rounded-lg p-4 text-xs overflow-x-auto">
+                <pre>https://<span class="text-sky-400">{your-domain}</span>.ciamlogin.com/<span class="text-sky-400">{tenant-id}</span>/v2.0/.well-known/openid-configuration
+
+<span class="text-surface-500"># Example:</span>
+https://mydemocustomers.ciamlogin.com/aaaabbbb-1111-2222-3333-ccccddddeeee/v2.0/.well-known/openid-configuration</pre>
+              </div>
+              <p class="text-sm text-surface-500 dark:text-surface-400 mt-2">
+                This is the URL you'll give Keycloak to auto-discover all token, authorization, and JWKS endpoints.
+              </p>
+            </div>
+          </div>
+
+          <!-- PART B: Docker Compose -->
+          <div class="mb-10">
+            <div class="flex items-center gap-2 mb-4">
+              <span class="phase-badge inline-flex items-center gap-1.5 bg-indigo-500 text-white text-xs font-bold px-3 py-1 rounded-full font-mono">PART B</span>
+              <h3 class="font-display font-bold text-xl text-surface-800 dark:text-surface-200">Local Docker Compose Stack</h3>
+            </div>
+
+            <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-4">
+              Create the following files in a project directory. The stack runs <strong>Keycloak</strong> (identity broker), a <strong>Node.js Express API</strong> (resource server), and two <strong>demo client apps</strong> (SPA frontends), plus PostgreSQL for Keycloak storage.
+            </p>
+
+            <!-- .env file -->
+            <h4 class="font-display font-bold text-sm text-surface-800 dark:text-surface-200 mb-2 flex items-center gap-2"><span class="text-indigo-500">①</span> .env</h4>
+            <div class="code-block bg-surface-900 dark:bg-surface-950 text-surface-100 rounded-lg p-4 mb-5 text-xs overflow-x-auto">
+              <pre><span class="text-surface-500"># === Entra External ID (from Azure Portal) ===</span>
+<span class="text-emerald-400">ENTRA_TENANT_ID</span>=aaaabbbb-1111-2222-3333-ccccddddeeee
+<span class="text-emerald-400">ENTRA_CLIENT_ID</span>=11112222-aaaa-bbbb-cccc-333344445555
+<span class="text-emerald-400">ENTRA_CLIENT_SECRET</span>=your-client-secret-value-here
+<span class="text-emerald-400">ENTRA_DOMAIN</span>=mydemocustomers
+
+<span class="text-surface-500"># === Keycloak ===</span>
+<span class="text-emerald-400">KC_DB_PASSWORD</span>=supersecretdb
+<span class="text-emerald-400">KC_ADMIN</span>=admin
+<span class="text-emerald-400">KC_ADMIN_PASSWORD</span>=admin123!</pre>
+            </div>
+
+            <!-- docker-compose.yml -->
+            <h4 class="font-display font-bold text-sm text-surface-800 dark:text-surface-200 mb-2 flex items-center gap-2"><span class="text-indigo-500">②</span> docker-compose.yml</h4>
+            <div class="code-block bg-surface-900 dark:bg-surface-950 text-surface-100 rounded-lg p-4 mb-5 text-xs overflow-x-auto">
+              <pre><span class="text-sky-400">version</span>: "3.9"
+<span class="text-sky-400">services</span>:
+
+  <span class="text-amber-400">postgres</span>:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: ${KC_DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak"]
+      interval: 5s
+      retries: 5
+
+  <span class="text-amber-400">keycloak</span>:
+    image: quay.io/keycloak/keycloak:25.0
+    command: start-dev
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD}
+      KC_HEALTH_ENABLED: "true"
+      KEYCLOAK_ADMIN: ${KC_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD}
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  <span class="text-amber-400">api</span>:
+    build: ./api
+    ports:
+      - "4000:4000"
+    environment:
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: demo
+      PORT: 4000
+    depends_on:
+      - keycloak
+
+  <span class="text-amber-400">client-a</span>:
+    build: ./client
+    ports:
+      - "3001:80"
+    environment:
+      VITE_KC_URL: http://localhost:8080
+      VITE_KC_REALM: demo
+      VITE_KC_CLIENT: client-a
+      VITE_API_URL: http://localhost:4000
+
+  <span class="text-amber-400">client-b</span>:
+    build: ./client
+    ports:
+      - "3002:80"
+    environment:
+      VITE_KC_URL: http://localhost:8080
+      VITE_KC_REALM: demo
+      VITE_KC_CLIENT: client-b
+      VITE_API_URL: http://localhost:4000
+
+<span class="text-sky-400">volumes</span>:
+  pgdata:</pre>
+            </div>
+
+            <!-- API Dockerfile -->
+            <h4 class="font-display font-bold text-sm text-surface-800 dark:text-surface-200 mb-2 flex items-center gap-2"><span class="text-indigo-500">③</span> api/Dockerfile + server.js</h4>
+            <div class="code-block bg-surface-900 dark:bg-surface-950 text-surface-100 rounded-lg p-4 mb-3 text-xs overflow-x-auto">
+              <pre><span class="text-surface-500"># api/Dockerfile</span>
+FROM node:20-alpine
+WORKDIR /app
+COPY package.json ./
+RUN npm install
+COPY . .
+EXPOSE 4000
+CMD ["node", "server.js"]</pre>
+            </div>
+            <div class="code-block bg-surface-900 dark:bg-surface-950 text-surface-100 rounded-lg p-4 mb-5 text-xs overflow-x-auto">
+              <pre><span class="text-surface-500">// api/server.js — Resource server with JWT validation</span>
+<span class="text-violet-400">const</span> express = require(<span class="text-emerald-400">"express"</span>);
+<span class="text-violet-400">const</span> jwt = require(<span class="text-emerald-400">"jsonwebtoken"</span>);
+<span class="text-violet-400">const</span> jwksClient = require(<span class="text-emerald-400">"jwks-rsa"</span>);
+<span class="text-violet-400">const</span> cors = require(<span class="text-emerald-400">"cors"</span>);
+
+<span class="text-violet-400">const</span> app = express();
+app.use(cors());
+
+<span class="text-violet-400">const</span> client = jwksClient({
+  jwksUri: `${process.env.KEYCLOAK_URL}/realms/${process.env.KEYCLOAK_REALM}/protocol/openid-connect/certs`
+});
+
+<span class="text-violet-400">function</span> <span class="text-amber-400">getKey</span>(header, cb) {
+  client.getSigningKey(header.kid, (err, key) =&gt; {
+    cb(err, key?.publicKey || key?.rsaPublicKey);
+  });
+}
+
+<span class="text-violet-400">function</span> <span class="text-amber-400">protect</span>(...roles) {
+  <span class="text-violet-400">return</span> (req, res, next) =&gt; {
+    <span class="text-violet-400">const</span> token = req.headers.authorization?.split(<span class="text-emerald-400">" "</span>)[1];
+    <span class="text-violet-400">if</span> (!token) <span class="text-violet-400">return</span> res.status(401).json({ error: <span class="text-emerald-400">"No token"</span> });
+    jwt.verify(token, getKey, (err, decoded) =&gt; {
+      <span class="text-violet-400">if</span> (err) <span class="text-violet-400">return</span> res.status(403).json({ error: <span class="text-emerald-400">"Invalid token"</span> });
+      <span class="text-violet-400">if</span> (roles.length &gt; 0) {
+        <span class="text-violet-400">const</span> userRoles = decoded.realm_access?.roles || [];
+        <span class="text-violet-400">if</span> (!roles.some(r =&gt; userRoles.includes(r)))
+          <span class="text-violet-400">return</span> res.status(403).json({ error: <span class="text-emerald-400">"Insufficient role"</span> });
+      }
+      req.user = decoded;
+      next();
+    });
+  };
+}
+
+app.get(<span class="text-emerald-400">"/api/public"</span>, (req, res) =&gt;
+  res.json({ message: <span class="text-emerald-400">"Public — no auth needed"</span> }));
+
+app.get(<span class="text-emerald-400">"/api/profile"</span>, protect(), (req, res) =&gt;
+  res.json({ user: req.user.preferred_username,
+             email: req.user.email,
+             roles: req.user.realm_access?.roles }));
+
+app.get(<span class="text-emerald-400">"/api/admin"</span>, protect(<span class="text-emerald-400">"admin"</span>), (req, res) =&gt;
+  res.json({ message: <span class="text-emerald-400">"Admin-only data"</span>, user: req.user.preferred_username }));
+
+app.listen(4000, () =&gt; console.log(<span class="text-emerald-400">"API on :4000"</span>));</pre>
+            </div>
+
+            <!-- Client -->
+            <h4 class="font-display font-bold text-sm text-surface-800 dark:text-surface-200 mb-2 flex items-center gap-2"><span class="text-indigo-500">④</span> client/ — Demo SPA (keycloak-js)</h4>
+            <div class="code-block bg-surface-900 dark:bg-surface-950 text-surface-100 rounded-lg p-4 mb-5 text-xs overflow-x-auto">
+              <pre><span class="text-surface-500">&lt;!-- client/index.html — Minimal SPA that proves SSO --&gt;</span>
+<span class="text-sky-400">&lt;script</span> src=<span class="text-emerald-400">"https://cdn.jsdelivr.net/npm/keycloak-js@25/dist/keycloak.min.js"</span><span class="text-sky-400">&gt;&lt;/script&gt;</span>
+<span class="text-sky-400">&lt;script&gt;</span>
+  <span class="text-violet-400">const</span> kc = <span class="text-violet-400">new</span> Keycloak({
+    url:      <span class="text-emerald-400">"http://localhost:8080"</span>,
+    realm:    <span class="text-emerald-400">"demo"</span>,
+    clientId: <span class="text-emerald-400">"client-a"</span>  <span class="text-surface-500">// or "client-b" for second app</span>
+  });
+
+  kc.init({ onLoad: <span class="text-emerald-400">"login-required"</span>, pkceMethod: <span class="text-emerald-400">"S256"</span> })
+    .then(auth =&gt; {
+      <span class="text-violet-400">if</span> (!auth) window.location.reload();
+      document.getElementById(<span class="text-emerald-400">"user"</span>).textContent = kc.tokenParsed.preferred_username;
+      document.getElementById(<span class="text-emerald-400">"roles"</span>).textContent =
+        JSON.stringify(kc.tokenParsed.realm_access?.roles);
+
+      <span class="text-surface-500">// Call protected API</span>
+      fetch(<span class="text-emerald-400">"http://localhost:4000/api/profile"</span>, {
+        headers: { Authorization: <span class="text-emerald-400">`Bearer ${kc.token}`</span> }
+      }).then(r =&gt; r.json()).then(d =&gt; {
+        document.getElementById(<span class="text-emerald-400">"api"</span>).textContent = JSON.stringify(d, null, 2);
+      });
+    });
+<span class="text-sky-400">&lt;/script&gt;</span>
+<span class="text-sky-400">&lt;h1&gt;</span>Demo Client<span class="text-sky-400">&lt;/h1&gt;</span>
+<span class="text-sky-400">&lt;p&gt;</span>User: <span class="text-sky-400">&lt;b</span> id=<span class="text-emerald-400">"user"</span><span class="text-sky-400">&gt;&lt;/b&gt;&lt;/p&gt;</span>
+<span class="text-sky-400">&lt;p&gt;</span>Roles: <span class="text-sky-400">&lt;code</span> id=<span class="text-emerald-400">"roles"</span><span class="text-sky-400">&gt;&lt;/code&gt;&lt;/p&gt;</span>
+<span class="text-sky-400">&lt;pre</span> id=<span class="text-emerald-400">"api"</span><span class="text-sky-400">&gt;&lt;/pre&gt;</span></pre>
+            </div>
+
+            <h4 class="font-display font-bold text-sm text-surface-800 dark:text-surface-200 mb-2 flex items-center gap-2"><span class="text-indigo-500">⑤</span> Launch the Stack</h4>
+            <div class="code-block bg-surface-900 dark:bg-surface-950 text-surface-100 rounded-lg p-4 mb-5 text-xs overflow-x-auto">
+              <pre><span class="text-surface-500"># Start everything</span>
+docker compose up -d --build
+
+<span class="text-surface-500"># Wait for Keycloak health check</span>
+docker compose logs -f keycloak | grep <span class="text-emerald-400">"Listening on"</span>
+
+<span class="text-surface-500"># Endpoints:</span>
+<span class="text-sky-400">Keycloak Admin</span>  → http://localhost:8080  (admin / admin123!)
+<span class="text-sky-400">Demo Client A</span>   → http://localhost:3001
+<span class="text-sky-400">Demo Client B</span>   → http://localhost:3002
+<span class="text-sky-400">API</span>             → http://localhost:4000/api/public</pre>
+            </div>
+          </div>
+
+          <!-- PART C: Keycloak Configuration -->
+          <div class="mb-10">
+            <div class="flex items-center gap-2 mb-4">
+              <span class="phase-badge inline-flex items-center gap-1.5 bg-brand-500 text-white text-xs font-bold px-3 py-1 rounded-full font-mono">PART C</span>
+              <h3 class="font-display font-bold text-xl text-surface-800 dark:text-surface-200">Keycloak — Wire Up Federation</h3>
+            </div>
+
+            <div class="space-y-4 text-sm text-surface-600 dark:text-surface-300 leading-relaxed">
+              <div class="flex items-start gap-3 bg-surface-50 dark:bg-surface-800/60 rounded-lg p-4 border border-surface-200 dark:border-surface-700/50">
+                <span class="shrink-0 bg-brand-500 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">1</span>
+                <div><strong class="text-surface-800 dark:text-surface-200">Create Realm "demo"</strong> — Log into Keycloak admin console. Click the realm dropdown → Create Realm → Name: <code class="font-mono text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded">demo</code>. Enable it.</div>
+              </div>
+
+              <div class="flex items-start gap-3 bg-surface-50 dark:bg-surface-800/60 rounded-lg p-4 border border-surface-200 dark:border-surface-700/50">
+                <span class="shrink-0 bg-brand-500 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">2</span>
+                <div><strong class="text-surface-800 dark:text-surface-200">Add Entra External ID as Identity Provider</strong> — Go to <strong>Identity Providers → Add provider → OpenID Connect v1.0</strong>. Set Alias: <code class="font-mono text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded">entra-external</code>. Paste the OIDC discovery URL from Step A7. Enter the Client ID and Secret from Step A3/A4. Set <strong>Client Authentication: Client secret sent as post</strong>. Set Default Scopes: <code class="font-mono text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded">openid profile email</code>.</div>
+              </div>
+
+              <div class="flex items-start gap-3 bg-surface-50 dark:bg-surface-800/60 rounded-lg p-4 border border-surface-200 dark:border-surface-700/50">
+                <span class="shrink-0 bg-brand-500 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">3</span>
+                <div><strong class="text-surface-800 dark:text-surface-200">Add Attribute Mappers</strong> — Under the IdP → Mappers tab, add: <code class="font-mono text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded">email</code> → email, <code class="font-mono text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded">given_name</code> → firstName, <code class="font-mono text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded">family_name</code> → lastName. Set Sync Mode: <strong>FORCE</strong> so attributes update on every login.</div>
+              </div>
+
+              <div class="flex items-start gap-3 bg-surface-50 dark:bg-surface-800/60 rounded-lg p-4 border border-surface-200 dark:border-surface-700/50">
+                <span class="shrink-0 bg-brand-500 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">4</span>
+                <div><strong class="text-surface-800 dark:text-surface-200">Create Clients in Keycloak</strong> — Create two OIDC clients: <code class="font-mono text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded">client-a</code> (Root URL: <code class="text-xs">http://localhost:3001</code>) and <code class="font-mono text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded">client-b</code> (Root URL: <code class="text-xs">http://localhost:3002</code>). Both: Access Type = <strong>public</strong>, Standard Flow = ON, Valid Redirect URIs = <code class="text-xs">http://localhost:3001/*</code> (or 3002). Web Origins = <code class="text-xs">+</code>.</div>
+              </div>
+
+              <div class="flex items-start gap-3 bg-surface-50 dark:bg-surface-800/60 rounded-lg p-4 border border-surface-200 dark:border-surface-700/50">
+                <span class="shrink-0 bg-brand-500 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">5</span>
+                <div><strong class="text-surface-800 dark:text-surface-200">Create Roles & Client Scope</strong> — Create realm roles: <code class="font-mono text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded">employee</code>, <code class="font-mono text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded">manager</code>, <code class="font-mono text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded">admin</code>. Create a client scope "roles" with a <strong>User Realm Role</strong> mapper to embed roles in the access token. Assign default role to <code class="font-mono text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded">employee</code>.</div>
+              </div>
+
+              <div class="flex items-start gap-3 bg-surface-50 dark:bg-surface-800/60 rounded-lg p-4 border border-surface-200 dark:border-surface-700/50">
+                <span class="shrink-0 bg-brand-500 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">6</span>
+                <div><strong class="text-surface-800 dark:text-surface-200">Test the Full Flow</strong> — Open <code class="text-xs">http://localhost:3001</code>. Keycloak login page appears with a "Sign in with Entra External ID" button. Click it → you're redirected to the Entra External ID branded sign-in page → log in with your test user → redirected back to Keycloak → then back to Client A with a valid JWT. Open <code class="text-xs">http://localhost:3002</code> in another tab — you should be logged in automatically via SSO (no password prompt).</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Deep Dive: How It All Works -->
+          <button onclick="toggleDeepDive('demo-deep')" class="btn-glow inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white text-sm font-display font-600 px-5 py-2.5 rounded-xl transition-all duration-300 mb-4">
+            <svg class="w-4 h-4 transition-transform duration-300" id="demo-deep-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            Deep Dive — How Entra External ID Federation Works
+          </button>
+          <div id="demo-deep" class="deep-dive-content mt-2">
+            <div class="deep-dive-panel bg-sky-50 dark:bg-surface-800 border border-sky-200 dark:border-sky-800/60 rounded-xl p-6 pl-7 space-y-5 text-sm text-surface-700 dark:text-surface-300 leading-relaxed" data-accent="blue">
+              <h4 class="font-display font-bold text-sky-700 dark:text-sky-300 text-base mb-2">Workforce Tenant vs. External Tenant</h4>
+              <p>
+                Traditional Azure AD (now "Entra ID") creates a <strong>workforce tenant</strong> — a directory for your employees. <strong>Entra External ID</strong> creates an <strong>external tenant</strong>, a completely separate directory purpose-built for consumers, partners, and external users. The external tenant has its own set of features: customizable sign-up pages, self-service password reset, social login federation (Google, Facebook, Apple), custom OIDC providers, and user-flow-based policies. Think of it as Azure AD B2C's successor — simpler, more integrated, and built into the Entra admin center.
+              </p>
+
+              <h4 class="font-display font-bold text-sky-700 dark:text-sky-300 text-base mb-2">The OIDC Discovery Endpoint</h4>
+              <p>
+                External tenants use a special domain: <code>*.ciamlogin.com</code> (Customer IAM Login). The discovery URL returns a JSON document containing the authorization endpoint, token endpoint, JWKS URI, supported scopes, and claims. When you paste this into Keycloak, it auto-populates all the OIDC configuration fields — no manual endpoint entry needed.
+              </p>
+              <div class="inner-block bg-white/60 dark:bg-surface-900/60 rounded-lg p-3 border border-transparent dark:border-white/5 text-xs font-mono">
+                <pre>{
+  "issuer": "https://mydemocustomers.ciamlogin.com/{tid}/v2.0",
+  "authorization_endpoint": ".../{tid}/oauth2/v2.0/authorize",
+  "token_endpoint": ".../{tid}/oauth2/v2.0/token",
+  "jwks_uri": ".../{tid}/discovery/v2.0/keys",
+  "scopes_supported": ["openid", "profile", "email", "offline_access"],
+  "response_types_supported": ["code", "id_token", "code id_token"]
+}</pre>
+              </div>
+
+              <h4 class="font-display font-bold text-sky-700 dark:text-sky-300 text-base mb-2">User Flows vs. Custom Auth Policies</h4>
+              <p>
+                <strong>User Flows</strong> are the declarative, no-code way to define sign-up/sign-in experiences. You select the sign-in method (email+password, email+OTP), choose which attributes to collect, and bind the flow to specific app registrations. Under the hood, a user flow creates an Authorization endpoint that triggers the correct authentication experience. For more complex scenarios, you can use <strong>Custom Authentication Extensions</strong> (REST API callbacks during the flow) — but user flows cover most demo and production cases.
+              </p>
+
+              <h4 class="font-display font-bold text-sky-700 dark:text-sky-300 text-base mb-2">How the Demo Authentication Flow Works</h4>
+              <div class="space-y-2">
+                <div class="flex items-start gap-2"><span class="shrink-0 text-sky-500 font-bold">1.</span><span>User visits <code>localhost:3001</code>. The <code>keycloak-js</code> adapter detects no session and redirects to <code>Keycloak /auth</code>.</span></div>
+                <div class="flex items-start gap-2"><span class="shrink-0 text-sky-500 font-bold">2.</span><span>Keycloak's login page shows "Sign in with Entra External ID". User clicks it.</span></div>
+                <div class="flex items-start gap-2"><span class="shrink-0 text-sky-500 font-bold">3.</span><span>Keycloak builds an OIDC Authorization Code request to the Entra External ID <code>authorize</code> endpoint, including its client ID, redirect URI (the broker endpoint), and scopes.</span></div>
+                <div class="flex items-start gap-2"><span class="shrink-0 text-sky-500 font-bold">4.</span><span>Entra External ID presents the branded sign-in page. The user enters their email and password (or uses OTP). Entra runs the user flow policy (validates credentials, collects attributes, applies MFA if configured).</span></div>
+                <div class="flex items-start gap-2"><span class="shrink-0 text-sky-500 font-bold">5.</span><span>Entra issues an <strong>authorization code</strong> and redirects back to Keycloak's broker endpoint with the code.</span></div>
+                <div class="flex items-start gap-2"><span class="shrink-0 text-sky-500 font-bold">6.</span><span>Keycloak exchanges the code for <strong>ID token + access token</strong> by calling Entra's token endpoint (server-to-server, with client secret). The ID token contains claims like <code>email</code>, <code>given_name</code>, <code>family_name</code>, <code>sub</code>.</span></div>
+                <div class="flex items-start gap-2"><span class="shrink-0 text-sky-500 font-bold">7.</span><span>Keycloak's <strong>attribute mappers</strong> extract claims and populate the Keycloak user profile. If it's first login, the <strong>First Broker Login</strong> flow creates a new local user (or links to an existing one).</span></div>
+                <div class="flex items-start gap-2"><span class="shrink-0 text-sky-500 font-bold">8.</span><span>Keycloak creates its own <strong>SSO session</strong> and issues its own JWT (access token + refresh token) containing Keycloak realm roles and custom claims. The Entra tokens are consumed internally — your apps never see them.</span></div>
+                <div class="flex items-start gap-2"><span class="shrink-0 text-sky-500 font-bold">9.</span><span>Keycloak redirects back to <code>localhost:3001</code> with the auth code. <code>keycloak-js</code> exchanges it for the Keycloak JWT. The SPA calls the API with <code>Authorization: Bearer {kc-token}</code>.</span></div>
+                <div class="flex items-start gap-2"><span class="shrink-0 text-sky-500 font-bold">10.</span><span>When the user opens <code>localhost:3002</code> (Client B), <code>keycloak-js</code> redirects to Keycloak, which sees the existing SSO cookie and immediately issues new tokens — <strong>zero login prompts</strong>. That's SSO in action.</span></div>
+              </div>
+
+              <h4 class="font-display font-bold text-sky-700 dark:text-sky-300 text-base mb-2">Why Broker Through Keycloak Instead of Directly Using Entra?</h4>
+              <p>
+                You could point your apps directly at Entra External ID — it supports OIDC natively. But brokering through Keycloak gives you: <strong>role management</strong> (Entra External ID doesn't have Keycloak-style realm roles or composite roles), <strong>multi-IdP support</strong> (add Google, SAML, LDAP alongside Entra without changing app code), <strong>protocol translation</strong> (serve SAML apps behind OIDC IdPs), <strong>fine-grained authorization</strong> (Keycloak Authorization Services, UMA), and <strong>portability</strong> — if you ever switch from Entra to Okta or another IdP, only the Keycloak broker config changes; your apps are untouched.
+              </p>
+
+              <h4 class="font-display font-bold text-sky-700 dark:text-sky-300 text-base mb-2">Pricing & Limits</h4>
+              <p>
+                Entra External ID is free for the first <strong>50,000 monthly active users (MAU)</strong>. An MAU is a unique user who authenticates at least once in a calendar month. Beyond that, pricing is per-MAU. For development and small-scale demos, the free tier is more than sufficient. The 30-day free trial includes all features; after that, link an Azure subscription to continue.
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
       <!-- =============== ACCESS CONTROL MATRIX =============== -->
       <section id="access-matrix" class="fade-section mb-16">
         <div class="section-card bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/50 rounded-2xl p-6 md:p-10 shadow-sm">
@@ -1308,6 +1780,7 @@ const tocSections = [
   { id: 'phase7', label: 'P7 · App Implementation', icon: '💻' },
   { id: 'phase8', label: 'P8 · Advanced Security', icon: '🔒' },
   { id: 'phase9', label: 'P9 · Monitoring', icon: '📊' },
+  { id: 'demo-setup', label: 'Demo Setup', icon: '🧪' },
   { id: 'access-matrix', label: 'Access Matrix', icon: '📋' },
   { id: 'security', label: 'Best Practices', icon: '🔐' },
   { id: 'checklist', label: 'Testing Checklist', icon: '✓' },
@@ -1629,6 +2102,42 @@ const sectionData = [
       { type: 'number', text: 'Logout works properly (both Keycloak and Azure AD)' },
       { type: 'number', text: 'Token refresh works seamlessly' },
       { type: 'number', text: 'Events are logged for audit trail' },
+    ]
+  },
+  {
+    id: 'demo-setup',
+    title: 'Hands-On Demo Setup: Entra External ID + Docker Compose',
+    content: [
+      { type: 'h3', text: 'What is Microsoft Entra External ID?' },
+      { type: 'p', text: 'Microsoft Entra External ID is the next-generation Customer Identity & Access Management (CIAM) solution from Microsoft, replacing Azure AD B2C. It creates a separate "external tenant" — isolated from your workforce directory — designed for consumer and partner-facing applications. Free for the first 50,000 monthly active users.' },
+      { type: 'bullet', text: 'External Tenant: A dedicated directory for customer/partner identities, completely separate from your workforce Entra ID tenant.' },
+      { type: 'bullet', text: 'User Flows: Built-in sign-up/sign-in flows with customizable branding, MFA, and social provider federation.' },
+      { type: 'bullet', text: 'OIDC Standard: Fully OIDC-compliant. Keycloak federates via the standard discovery endpoint.' },
+      { type: 'bullet', text: 'Discovery Domain: External tenants use *.ciamlogin.com (e.g., mydemocustomers.ciamlogin.com/{tenant-id}/v2.0/.well-known/openid-configuration).' },
+      { type: 'h3', text: 'Part A: Entra External ID — Azure Portal Setup' },
+      { type: 'p', text: 'Step A1: Create an External Tenant. Sign in to https://entra.microsoft.com. Navigate to Entra ID → Overview → Manage tenants → Create. Select "External" (not Workforce). Enter a Tenant Name and unique domain prefix. Provisioning takes up to 30 minutes.' },
+      { type: 'p', text: 'Step A2: Switch to the external tenant using Settings → Directories + subscriptions. Run the Get Started guide to configure sign-in methods (Email + password or Email + OTP) and branding.' },
+      { type: 'p', text: 'Step A3: Register two app registrations — "Keycloak-Broker" (Web redirect: http://localhost:8080/realms/demo/broker/entra-external/endpoint) and "Demo-SPA-Client" (SPA redirect: http://localhost:3001/callback). Both single-tenant.' },
+      { type: 'p', text: 'Step A4: Create a client secret for Keycloak-Broker. Copy the Value immediately. Step A5: Configure API permissions — add Microsoft Graph delegated: openid, profile, email, offline_access. Grant admin consent.' },
+      { type: 'p', text: 'Step A6: Create a User Flow (demo-signup-signin) with Email + password. Bind both app registrations to the flow.' },
+      { type: 'h3', text: 'Part B: Docker Compose Stack' },
+      { type: 'p', text: 'The local stack runs: Keycloak (identity broker, port 8080), Node.js Express API (resource server, port 4000), Demo Client A (SPA, port 3001), Demo Client B (SPA, port 3002), and PostgreSQL for Keycloak storage.' },
+      { type: 'code', text: '# .env — fill from Azure Portal\nENTRA_TENANT_ID=aaaabbbb-1111-2222-3333-ccccddddeeee\nENTRA_CLIENT_ID=11112222-aaaa-bbbb-cccc-333344445555\nENTRA_CLIENT_SECRET=your-secret-here\nENTRA_DOMAIN=mydemocustomers\nKC_DB_PASSWORD=supersecretdb\nKC_ADMIN=admin\nKC_ADMIN_PASSWORD=admin123!' },
+      { type: 'code', text: '# Launch\ndocker compose up -d --build\n\n# Endpoints:\n# Keycloak Admin → http://localhost:8080\n# Client A       → http://localhost:3001\n# Client B       → http://localhost:3002\n# API            → http://localhost:4000/api/public' },
+      { type: 'h3', text: 'Part C: Keycloak Federation Configuration' },
+      { type: 'number', text: 'Create Realm "demo" in Keycloak admin console.' },
+      { type: 'number', text: 'Add Identity Provider → OpenID Connect v1.0. Alias: entra-external. Paste the ciamlogin.com discovery URL. Enter Client ID and Secret.' },
+      { type: 'number', text: 'Add Attribute Mappers: email, given_name → firstName, family_name → lastName. Sync Mode: FORCE.' },
+      { type: 'number', text: 'Create two public OIDC clients: client-a (port 3001) and client-b (port 3002).' },
+      { type: 'number', text: 'Create realm roles (employee, manager, admin) and a "roles" client scope with User Realm Role mapper.' },
+      { type: 'number', text: 'Test: Open localhost:3001 → click "Sign in with Entra External ID" → authenticate → verify SSO by opening localhost:3002 (no login prompt).' },
+      { type: 'h3', text: 'How the Authentication Flow Works' },
+      { type: 'p', text: 'User visits Client A → keycloak-js redirects to Keycloak → user clicks "Entra External ID" → Keycloak sends OIDC auth request to ciamlogin.com → Entra presents branded sign-in → user authenticates → Entra returns auth code to Keycloak broker endpoint → Keycloak exchanges code for tokens (server-to-server) → attribute mappers populate user profile → Keycloak creates SSO session and issues its own JWT → Client A receives Keycloak JWT → calls API with Bearer token. Client B picks up the SSO session automatically.' },
+      { type: 'h3', text: 'Why Broker Through Keycloak?' },
+      { type: 'bullet', text: 'Role Management: Entra External ID lacks Keycloak-style realm roles and composite roles.' },
+      { type: 'bullet', text: 'Multi-IdP Support: Add Google, SAML, LDAP alongside Entra without changing app code.' },
+      { type: 'bullet', text: 'Fine-Grained Authorization: Keycloak Authorization Services and UMA support.' },
+      { type: 'bullet', text: 'Portability: Switch IdPs by reconfiguring only the Keycloak broker — apps are untouched.' },
     ]
   },
   {
