@@ -306,7 +306,7 @@
       <span class="bg-gradient-to-r from-brand-500 via-brand-400 to-brand-600 bg-clip-text text-transparent">Federation with RBAC & SSO</span>
     </h1>
     <p class="text-lg md:text-xl text-surface-600 dark:text-surface-300 max-w-2xl mx-auto leading-relaxed font-light">
-      Enterprise identity management from zero to production. Azure AD as your IdP, Keycloak as your broker, with role-based access control and cell-level security.
+      Enterprise identity management from zero to production. Azure AD as your IdP, Keycloak as your broker, with role-based access control, classification-based clearance, need-to-know project approvals, and cell-level security.
     </p>
 
     <!-- Architecture Overview Diagram -->
@@ -334,6 +334,7 @@
       <span class="bg-surface-100 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 px-3 py-1.5 rounded-full">OIDC/OAuth2</span>
       <span class="bg-surface-100 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 px-3 py-1.5 rounded-full">RBAC</span>
       <span class="bg-surface-100 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 px-3 py-1.5 rounded-full">Cell-Level Security</span>
+      <span class="bg-surface-100 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 px-3 py-1.5 rounded-full">Need-to-Know</span>
     </div>
 
     <!-- Download buttons -->
@@ -419,7 +420,12 @@
             <div class="bg-surface-50 dark:bg-surface-900/60 border border-surface-200 dark:border-surface-700/40 rounded-xl p-4">
               <div class="text-rose-500 text-lg mb-2">🔬</div>
               <h3 class="font-display font-bold text-sm mb-1">Cell-Level Security</h3>
-              <p class="text-xs text-surface-500 dark:text-surface-400 leading-relaxed">Fine-grained data access control — restrict access to specific rows, documents, or data cells based on user attributes like department and clearance level.</p>
+              <p class="text-xs text-surface-500 dark:text-surface-400 leading-relaxed">Fine-grained data access via <strong>classification levels</strong> and <strong>need-to-know approval</strong> tied to project codes. Role alone does not grant access — an executive without clearance and approved need-to-know is denied just like any other user.</p>
+            </div>
+            <div class="bg-surface-50 dark:bg-surface-900/60 border border-surface-200 dark:border-surface-700/40 rounded-xl p-4">
+              <div class="text-orange-500 text-lg mb-2">🏷️</div>
+              <h3 class="font-display font-bold text-sm mb-1">Classification & Need-to-Know</h3>
+              <p class="text-xs text-surface-500 dark:text-surface-400 leading-relaxed">Data is tagged with a classification level and a project code. Users must hold the matching classification <em>and</em> an approved need-to-know for that project — with CRUD permissions granted individually per approval.</p>
             </div>
             <div class="bg-surface-50 dark:bg-surface-900/60 border border-surface-200 dark:border-surface-700/40 rounded-xl p-4">
               <div class="text-violet-500 text-lg mb-2">🔗</div>
@@ -742,6 +748,12 @@ Trust Email:    ON</pre>
 
           <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-4">Create Keycloak roles that define what users can do, then map Azure AD groups to those roles for automatic assignment.</p>
 
+          <!-- Classification Notice -->
+          <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40 rounded-xl p-4 mb-6">
+            <h4 class="font-display font-bold text-sm text-amber-700 dark:text-amber-300 mb-1">⚠️ Important: Roles Are Necessary But Not Sufficient</h4>
+            <p class="text-xs text-amber-800 dark:text-amber-200 leading-relaxed">A role (employee, manager, director, executive) determines the <strong>maximum capability</strong> a user may exercise — but it does <strong>not</strong> grant access to any classified data by itself. To see or modify classified data, a user must <em>also</em> hold the required <strong>classification level</strong> and an approved <strong>need-to-know</strong> for the specific project code. An executive who lacks classification clearance or need-to-know approval for a project is denied access to that project’s data, regardless of their role.</p>
+          </div>
+
           <!-- Role hierarchy visualization -->
           <div class="bg-surface-50 dark:bg-surface-900/40 border border-surface-200 dark:border-surface-700/40 rounded-xl p-5 mb-6">
             <h4 class="font-display font-bold text-sm mb-3">Role Hierarchy (Composite Roles)</h4>
@@ -753,7 +765,11 @@ Trust Email:    ON</pre>
             └── employee (base level)
 
 <span class="text-brand-500">Composite = inherits all child roles</span>
-A "director" automatically has manager + employee permissions</pre>
+A "director" automatically has manager + employee permissions
+
+<span class="text-rose-500">✘ Role ≠ Access to classified data</span>
+<span class="text-rose-500">Access = Role + Classification Level + Need-to-Know Approval</span>
+An executive without NTK approval for Project-X cannot see Project-X data</pre>
             </div>
           </div>
 
@@ -811,12 +827,16 @@ executive: ↑ director + profile:read-all, access-top-secret,
 
           <div class="grid sm:grid-cols-2 gap-4 mb-6">
             <div class="bg-rose-50 dark:bg-rose-900/25 border border-rose-200 dark:border-rose-700/40 rounded-xl p-4">
-              <h4 class="font-display font-bold text-sm text-rose-700 dark:text-rose-300 mb-2">Approach 1: User Attributes</h4>
-              <p class="text-xs text-surface-600 dark:text-surface-300 leading-relaxed">Add attributes like <code class="font-mono">department</code>, <code class="font-mono">region</code>, <code class="font-mono">data_classification</code> to users. Map them into access tokens via client scope mappers. Application code reads these from the JWT to filter data.</p>
+              <h4 class="font-display font-bold text-sm text-rose-700 dark:text-rose-300 mb-2">Layer 1: User Attributes & Classification</h4>
+              <p class="text-xs text-surface-600 dark:text-surface-300 leading-relaxed">Add <code class="font-mono">classification_level</code> (0–4) and <code class="font-mono">department</code> to each user. Map into access tokens via client scope mappers. The app compares the user’s level against the data’s classification before any access.</p>
             </div>
             <div class="bg-rose-50 dark:bg-rose-900/25 border border-rose-200 dark:border-rose-700/40 rounded-xl p-4">
-              <h4 class="font-display font-bold text-sm text-rose-700 dark:text-rose-300 mb-2">Approach 2: Authorization Services</h4>
-              <p class="text-xs text-surface-600 dark:text-surface-300 leading-relaxed">Define Resources, Scopes, Policies, and Permissions in Keycloak. Policies can be role-based, JavaScript-based, or time-based. Keycloak evaluates policies at runtime and returns authorization decisions.</p>
+              <h4 class="font-display font-bold text-sm text-rose-700 dark:text-rose-300 mb-2">Layer 2: Need-to-Know + Project Code</h4>
+              <p class="text-xs text-surface-600 dark:text-surface-300 leading-relaxed">Even with sufficient clearance, users must have an <strong>approved need-to-know</strong> entry for a data item’s project code. Each NTK approval specifies exactly which CRUD operations are permitted. The app checks the <code class="font-mono">user_need_to_know</code> table for a matching project + allowed actions.</p>
+            </div>
+            <div class="bg-rose-50 dark:bg-rose-900/25 border border-rose-200 dark:border-rose-700/40 rounded-xl p-4">
+              <h4 class="font-display font-bold text-sm text-rose-700 dark:text-rose-300 mb-2">Layer 3: Authorization Services</h4>
+              <p class="text-xs text-surface-600 dark:text-surface-300 leading-relaxed">Define Resources, Scopes, Policies, and Permissions in Keycloak. Policies combine role checks, classification-level checks, and NTK lookups. Keycloak evaluates all policies at runtime and returns authorization decisions.</p>
             </div>
           </div>
 
@@ -831,8 +851,16 @@ executive: ↑ director + profile:read-all, access-top-secret,
                 <p>Unlike RBAC (which controls what actions you can perform), cell-level security controls which specific data items you can see. A "manager" might have read access to documents, but cell-level security ensures they only see documents from their own department, not every department's documents. It's the difference between "can you read documents?" (RBAC) and "which documents can you read?" (cell-level).</p>
               </div>
               <div>
-                <h4 class="font-display font-bold text-rose-700 dark:text-rose-300 mb-1">Data Classification Levels</h4>
-                <p>Documents are classified as <strong>Public</strong> (everyone), <strong>Internal</strong> (any employee), <strong>Confidential</strong> (managers+), <strong>Restricted</strong> (directors+), or <strong>Top-Secret</strong> (executives only). The classification-level policy in Keycloak checks the user's highest role against the document's classification to grant or deny access.</p>
+                <h4 class="font-display font-bold text-rose-700 dark:text-rose-300 mb-1">Data Classification Levels & Need-to-Know</h4>
+                <p>Documents are classified as <strong>Public</strong> (L0), <strong>Internal</strong> (L1), <strong>Confidential</strong> (L2), <strong>Restricted</strong> (L3), or <strong>Top-Secret</strong> (L4). Classification defines the <em>minimum clearance</em> a user must hold, but <strong>clearance alone is not enough</strong>. Access requires:</p>
+                <div class="mt-2 space-y-1.5 text-xs">
+                  <div class="flex gap-2 items-start"><span class="shrink-0 text-rose-500 font-bold">1.</span><p><strong>Classification Level:</strong> User’s clearance level ≥ data’s classification level.</p></div>
+                  <div class="flex gap-2 items-start"><span class="shrink-0 text-rose-500 font-bold">2.</span><p><strong>Need-to-Know Approval:</strong> User has an approved NTK entry for the data’s project code, granted by a project owner or security officer.</p></div>
+                  <div class="flex gap-2 items-start"><span class="shrink-0 text-rose-500 font-bold">3.</span><p><strong>CRUD Permission:</strong> The NTK approval specifies exactly which operations (Create, Read, Update, Delete) the user may perform. A user may be approved to Read but not Update or Delete.</p></div>
+                </div>
+                <div class="mt-3 p-3 inner-block bg-white/60 dark:bg-surface-900/60 rounded-lg border border-rose-200/50 dark:border-white/10">
+                  <p class="text-xs font-mono text-surface-500 dark:text-surface-400"><strong class="text-rose-600 dark:text-rose-400">Example:</strong> An <em>executive</em> (highest role) tries to access a <em>Restricted</em> financial forecast for <code>PROJECT-ATLAS</code>. They hold Top-Secret clearance (L4 ≥ L3 ✔) but have <strong>no NTK approval</strong> for PROJECT-ATLAS — <strong>access denied</strong>. Meanwhile, an <em>employee</em> who holds L3 clearance <em>and</em> has an approved NTK for PROJECT-ATLAS with Read permission <strong>can</strong> view it.</p>
+                </div>
               </div>
               <div>
                 <h4 class="font-display font-bold text-rose-700 dark:text-rose-300 mb-1">PostgreSQL Row-Level Security</h4>
@@ -931,16 +959,20 @@ app.get('/secure',  keycloak.protect(), <span class="text-amber-400">/* any auth
 app.get('/admin',   keycloak.protect('admin'), <span class="text-amber-400">/* admin role required */</span>);
 app.get('/manager', keycloak.protect('manager'), <span class="text-amber-400">/* manager role required */</span>);
 
-<span class="text-surface-500">// Cell-level security in route handler</span>
-app.get('/api/finance', keycloak.protect(), (req, res) => {
-  const token = req.kauth.grant.access_token.content;
-  if (token.realm_access.roles.includes('finance-analyst')
-      || token.department === 'finance') {
-    <span class="text-amber-400">// Grant access to financial data</span>
-  } else {
-    res.status(403).json({ error: 'Access denied' });
-  }
-});</pre>
+<span class="text-surface-500">// Cell-level security: classification + need-to-know check</span>
+app.get('/api/docs/:id',
+  keycloak.protect(),                          <span class="text-amber-400">// Gate 1: Role</span>
+  requireClassifiedAccess('read'),             <span class="text-amber-400">// Gate 2+3: Cls + NTK</span>
+  getDocument
+);
+
+app.put('/api/docs/:id',
+  keycloak.protect('manager'),                 <span class="text-amber-400">// Gate 1: Manager+</span>
+  requireClassifiedAccess('update'),           <span class="text-amber-400">// Gate 2+3: Cls + NTK</span>
+  updateDocument
+);
+<span class="text-surface-500">// Executive without NTK = denied</span>
+<span class="text-surface-500">// Employee with read-only NTK = can read</span></pre>
           </div>
 
           <button onclick="toggleDeepDive('phase7-deep')" class="btn-glow inline-flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-display font-600 px-5 py-2.5 rounded-xl transition-all duration-300">
@@ -975,27 +1007,62 @@ app.get('/api/finance', keycloak.protect(), (req, res) => {
           </div>
           <p class="text-sm text-surface-500 dark:text-surface-400 font-mono mb-6">Step 19 · Database-level row security with PostgreSQL</p>
 
-          <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-4">Implement defense-in-depth by enabling PostgreSQL Row-Level Security. Even if your application code has a flaw, the database enforces access rules automatically based on session variables set from the user's JWT token.</p>
+          <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-4">Implement defense-in-depth by enabling PostgreSQL Row-Level Security. Even if your application code has a flaw, the database enforces access rules automatically based on session variables set from the user’s JWT token. The RLS policies enforce <strong>both</strong> classification clearance and need-to-know approval at the database layer.</p>
 
-          <div class="code-block bg-surface-900 dark:bg-surface-950 text-emerald-400 rounded-xl p-4 overflow-x-auto mb-6">
-            <pre><span class="text-surface-500">-- Create table &amp; enable RLS</span>
-CREATE TABLE financial_records (
-  id SERIAL PRIMARY KEY,
-  department VARCHAR(50),
-  region VARCHAR(50),
-  amount DECIMAL(10,2),
-  description TEXT
-);
-ALTER TABLE financial_records ENABLE ROW LEVEL SECURITY;
+          <div class="code-block bg-surface-900 dark:bg-surface-950 text-emerald-400 rounded-xl p-4 overflow-x-auto mb-4">
+            <pre><span class="text-surface-500">-- Enable RLS on classified data table</span>
+ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
 
-<span class="text-surface-500">-- Users only see rows matching their department</span>
-CREATE POLICY department_isolation ON financial_records
-  USING (department = current_setting('app.user_department', true));
+<span class="text-surface-500">-- Policy 1: User classification must meet or exceed data classification</span>
+CREATE POLICY classification_check ON documents
+  FOR ALL
+  USING (
+    classification_level &lt;= current_setting('app.user_classification', true)::int
+  );
 
-<span class="text-surface-500">-- In app: set session var from JWT before any query</span>
+<span class="text-surface-500">-- Policy 2: User must have NTK approval for the project code</span>
+CREATE POLICY ntk_check ON documents
+  FOR SELECT
+  USING (
+    project_code IS NULL  <span class="text-amber-400">-- unclassified data is visible</span>
+    OR EXISTS (
+      SELECT 1 FROM user_need_to_know untk
+      WHERE untk.user_id = current_setting('app.user_id', true)
+        AND untk.project_code = documents.project_code
+        AND untk.status = 'approved'
+        AND untk.can_read = true
+        AND (untk.expires_at IS NULL OR untk.expires_at &gt; NOW())
+    )
+  );
+
+<span class="text-surface-500">-- In app: set session vars from JWT before any query</span>
+await db.query(`SET app.user_id = $1`, [token.sub]);
+await db.query(`SET app.user_classification = $1`, [token.classification_level]);
 await db.query(`SET app.user_department = $1`, [token.department]);
-const results = await db.query('SELECT * FROM financial_records');
-<span class="text-amber-400">-- ↑ Automatically filtered by department!</span></pre>
+const results = await db.query('SELECT * FROM documents');
+<span class="text-amber-400">-- ↑ Filtered by classification + NTK automatically!</span></pre>
+          </div>
+
+          <div class="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-700/40 rounded-xl p-4 mb-6">
+            <h4 class="font-display font-bold text-xs uppercase tracking-wider text-rose-700 dark:text-rose-300 mb-2">🛡️ Key Principle: Three-Gate Access Check</h4>
+            <div class="grid sm:grid-cols-3 gap-3 text-xs text-surface-600 dark:text-surface-300">
+              <div class="bg-white/60 dark:bg-surface-800/60 rounded-lg p-3 border border-rose-100 dark:border-white/10 text-center">
+                <div class="text-lg mb-1">🚪</div>
+                <strong class="text-rose-700 dark:text-rose-400 block mb-1">Gate 1: Role</strong>
+                Does the user’s role allow this <em>type</em> of action?
+              </div>
+              <div class="bg-white/60 dark:bg-surface-800/60 rounded-lg p-3 border border-rose-100 dark:border-white/10 text-center">
+                <div class="text-lg mb-1">🔒</div>
+                <strong class="text-rose-700 dark:text-rose-400 block mb-1">Gate 2: Classification</strong>
+                Is the user’s clearance level ≥ the data’s classification?
+              </div>
+              <div class="bg-white/60 dark:bg-surface-800/60 rounded-lg p-3 border border-rose-100 dark:border-white/10 text-center">
+                <div class="text-lg mb-1">📋</div>
+                <strong class="text-rose-700 dark:text-rose-400 block mb-1">Gate 3: Need-to-Know</strong>
+                Is the user approved for this project code with the required CRUD action?
+              </div>
+            </div>
+            <p class="text-xs text-rose-700 dark:text-rose-300 mt-3 text-center font-mono">All three gates must pass. Failing <em>any one</em> gate = access denied.</p>
           </div>
         </div>
       </section>
@@ -1548,13 +1615,15 @@ docker compose logs -f keycloak | grep <span class="text-emerald-400">"Listening
             </div>
           </div>
 
-          <div class="overflow-x-auto -mx-2">
+          <!-- Role Capability Matrix -->
+          <h3 class="font-display font-bold text-lg mb-3">Role Capability Matrix <span class="text-xs font-mono text-surface-400 dark:text-surface-500">(what the role <em>permits</em>)</span></h3>
+          <div class="overflow-x-auto -mx-2 mb-8">
             <table class="access-matrix w-full text-xs border-collapse">
               <thead>
                 <tr class="bg-surface-100 dark:bg-surface-900/60">
                   <th class="text-left px-3 py-2.5 font-display font-bold text-surface-700 dark:text-surface-200 rounded-tl-lg">Role</th>
                   <th class="font-mono text-surface-500 dark:text-surface-400">Create</th>
-                  <th class="font-mono text-surface-500 dark:text-surface-400">Own</th>
+                  <th class="font-mono text-surface-500 dark:text-surface-400">Read Own</th>
                   <th class="font-mono text-surface-500 dark:text-surface-400">Public</th>
                   <th class="font-mono text-surface-500 dark:text-surface-400">Team</th>
                   <th class="font-mono text-surface-500 dark:text-surface-400">Dept</th>
@@ -1569,11 +1638,11 @@ docker compose logs -f keycloak | grep <span class="text-emerald-400">"Listening
               <tbody class="divide-y divide-surface-100 dark:divide-surface-700/30">
                 <tr class="hover:bg-surface-50 dark:hover:bg-surface-800/40 transition">
                   <td class="text-left px-3 font-display font-600 text-surface-700 dark:text-surface-200">Employee</td>
-                  <td>✅</td><td>✅</td><td>✅</td><td>❌</td><td class="text-amber-500">⚠️</td><td>❌</td><td>✅</td><td>❌</td><td>✅</td><td>❌</td><td>❌</td>
+                  <td>✅</td><td>✅</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td><td>❌</td><td>✅</td><td>❌</td><td>❌</td>
                 </tr>
                 <tr class="hover:bg-surface-50 dark:hover:bg-surface-800/40 transition">
                   <td class="text-left px-3 font-display font-600 text-surface-700 dark:text-surface-200">Manager</td>
-                  <td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>❌</td><td>✅</td><td>✅</td><td class="text-amber-500">⚠️</td><td>✅</td><td>❌</td>
+                  <td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>❌</td>
                 </tr>
                 <tr class="hover:bg-surface-50 dark:hover:bg-surface-800/40 transition">
                   <td class="text-left px-3 font-display font-600 text-surface-700 dark:text-surface-200">Director</td>
@@ -1586,7 +1655,241 @@ docker compose logs -f keycloak | grep <span class="text-emerald-400">"Listening
               </tbody>
             </table>
           </div>
-          <p class="text-xs text-surface-400 dark:text-surface-500 mt-3">⚠️ = Limited by classification level and department membership</p>
+
+          <!-- Classification & Need-to-Know Gate -->
+          <h3 class="font-display font-bold text-lg mb-3">Classification & Need-to-Know Gate <span class="text-xs font-mono text-rose-500">(overrides role)</span></h3>
+          <div class="bg-rose-50 dark:bg-rose-900/15 border border-rose-200 dark:border-rose-700/40 rounded-xl p-5 mb-6">
+            <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-4">Even if the role matrix above shows ✅ for an action, the user is <strong>blocked</strong> unless they also pass both classification and need-to-know checks for the specific data item. CRUD permissions are granted <strong>individually per NTK approval</strong>.</p>
+            <div class="overflow-x-auto -mx-2">
+              <table class="access-matrix w-full text-xs border-collapse">
+                <thead>
+                  <tr class="bg-rose-100 dark:bg-rose-900/40">
+                    <th class="text-left px-3 py-2.5 font-display font-bold text-rose-800 dark:text-rose-200 rounded-tl-lg">Data Classification</th>
+                    <th class="font-mono text-rose-600 dark:text-rose-300">Min. Clearance</th>
+                    <th class="font-mono text-rose-600 dark:text-rose-300">NTK Required?</th>
+                    <th class="font-mono text-rose-600 dark:text-rose-300">NTK CRUD Scoped?</th>
+                    <th class="font-mono text-rose-600 dark:text-rose-300 rounded-tr-lg">Example</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-rose-100 dark:divide-rose-800/30">
+                  <tr class="hover:bg-rose-50/50 dark:hover:bg-rose-900/20 transition">
+                    <td class="text-left px-3 font-display font-600 text-surface-700 dark:text-surface-200">L0 — Public</td>
+                    <td>None</td><td>❌ No</td><td>—</td><td class="text-left text-surface-500 dark:text-surface-400">Company blog posts</td>
+                  </tr>
+                  <tr class="hover:bg-rose-50/50 dark:hover:bg-rose-900/20 transition">
+                    <td class="text-left px-3 font-display font-600 text-surface-700 dark:text-surface-200">L1 — Internal</td>
+                    <td>L1+</td><td>❌ No</td><td>—</td><td class="text-left text-surface-500 dark:text-surface-400">Team wikis, org charts</td>
+                  </tr>
+                  <tr class="hover:bg-rose-50/50 dark:hover:bg-rose-900/20 transition">
+                    <td class="text-left px-3 font-display font-600 text-surface-700 dark:text-surface-200">L2 — Confidential</td>
+                    <td>L2+</td><td>✅ Yes</td><td>✅ Yes</td><td class="text-left text-surface-500 dark:text-surface-400">Financial forecasts, HR reports</td>
+                  </tr>
+                  <tr class="hover:bg-rose-50/50 dark:hover:bg-rose-900/20 transition">
+                    <td class="text-left px-3 font-display font-600 text-surface-700 dark:text-surface-200">L3 — Restricted</td>
+                    <td>L3+</td><td>✅ Yes</td><td>✅ Yes</td><td class="text-left text-surface-500 dark:text-surface-400">M&A plans, security audits</td>
+                  </tr>
+                  <tr class="hover:bg-rose-50/50 dark:hover:bg-rose-900/20 transition">
+                    <td class="text-left px-3 font-display font-600 text-surface-700 dark:text-surface-200">L4 — Top-Secret</td>
+                    <td>L4</td><td>✅ Yes</td><td>✅ Yes</td><td class="text-left text-surface-500 dark:text-surface-400">Board strategies, legal matters</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Real-World Scenario Table -->
+          <h3 class="font-display font-bold text-lg mb-3">Real-World Scenario: Who Gets Access?</h3>
+          <div class="overflow-x-auto -mx-2 mb-4">
+            <table class="access-matrix w-full text-xs border-collapse">
+              <thead>
+                <tr class="bg-surface-100 dark:bg-surface-900/60">
+                  <th class="text-left px-3 py-2.5 font-display font-bold text-surface-700 dark:text-surface-200 rounded-tl-lg">User</th>
+                  <th class="font-mono text-surface-500 dark:text-surface-400">Role</th>
+                  <th class="font-mono text-surface-500 dark:text-surface-400">Clearance</th>
+                  <th class="font-mono text-surface-500 dark:text-surface-400">NTK: ATLAS</th>
+                  <th class="font-mono text-surface-500 dark:text-surface-400">L3 Doc in ATLAS</th>
+                  <th class="font-mono text-surface-500 dark:text-surface-400 rounded-tr-lg">Allowed CRUD</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-surface-100 dark:divide-surface-700/30">
+                <tr class="hover:bg-surface-50 dark:hover:bg-surface-800/40 transition">
+                  <td class="text-left px-3 font-display font-600 text-surface-700 dark:text-surface-200">Alice</td>
+                  <td>Executive</td><td>L4</td><td class="text-rose-500 font-bold">❌ None</td><td class="text-rose-500 font-bold">❌ DENIED</td><td>—</td>
+                </tr>
+                <tr class="hover:bg-surface-50 dark:hover:bg-surface-800/40 transition">
+                  <td class="text-left px-3 font-display font-600 text-surface-700 dark:text-surface-200">Bob</td>
+                  <td>Employee</td><td>L3</td><td class="text-emerald-500 font-bold">✅ R</td><td class="text-emerald-500 font-bold">✅ Read</td><td>Read only</td>
+                </tr>
+                <tr class="hover:bg-surface-50 dark:hover:bg-surface-800/40 transition">
+                  <td class="text-left px-3 font-display font-600 text-surface-700 dark:text-surface-200">Carol</td>
+                  <td>Manager</td><td>L2</td><td class="text-emerald-500 font-bold">✅ CRUD</td><td class="text-rose-500 font-bold">❌ DENIED</td><td>Clearance L2 &lt; L3</td>
+                </tr>
+                <tr class="hover:bg-surface-50 dark:hover:bg-surface-800/40 transition">
+                  <td class="text-left px-3 font-display font-600 text-surface-700 dark:text-surface-200">Dave</td>
+                  <td>Director</td><td>L3</td><td class="text-emerald-500 font-bold">✅ CR</td><td class="text-emerald-500 font-bold">✅ Create+Read</td><td>Create, Read only</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="text-xs text-surface-400 dark:text-surface-500 mt-3">⚠️ Role capability + Classification clearance + Need-to-Know approval with CRUD scope — all three must align for access.</p>
+        </div>
+      </section>
+
+      <!-- =============== CLASSIFICATION & NEED-TO-KNOW =============== -->
+      <section id="classification-ntk" class="fade-section mb-16">
+        <div class="section-card bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/50 rounded-2xl p-6 md:p-10 shadow-sm">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-orange-600 flex items-center justify-center text-white text-lg">🏷️</div>
+            <div>
+              <h2 class="font-display font-800 text-2xl md:text-3xl">Classification & Need-to-Know</h2>
+              <p class="text-sm text-surface-500 dark:text-surface-400 font-mono">Cell-level security independent of role hierarchy</p>
+            </div>
+          </div>
+
+          <p class="text-surface-600 dark:text-surface-300 leading-relaxed mb-6">
+            Traditional RBAC answers <em>"what actions can this role perform?"</em> but it does not answer <em>"should this specific user see this specific piece of data?"</em> The Classification & Need-to-Know model adds two independent security dimensions that <strong>override</strong> role permissions. A user must satisfy <strong>all three gates</strong> — role, classification, and need-to-know — to access any classified data.
+          </p>
+
+          <!-- Core Concept Cards -->
+          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            <div class="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-700/40 rounded-xl p-4">
+              <div class="text-rose-500 text-lg mb-2">🔒</div>
+              <h4 class="font-display font-bold text-sm mb-1">Classification Level</h4>
+              <p class="text-xs text-surface-600 dark:text-surface-300 leading-relaxed">Every data record is tagged with a level: <strong>L0</strong> (Public), <strong>L1</strong> (Internal), <strong>L2</strong> (Confidential), <strong>L3</strong> (Restricted), <strong>L4</strong> (Top-Secret). Every user is granted a <strong>clearance level</strong> by a security officer. User clearance must ≥ data level.</p>
+            </div>
+            <div class="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700/40 rounded-xl p-4">
+              <div class="text-orange-500 text-lg mb-2">📋</div>
+              <h4 class="font-display font-bold text-sm mb-1">Need-to-Know (NTK)</h4>
+              <p class="text-xs text-surface-600 dark:text-surface-300 leading-relaxed">Data at L2+ is grouped under a <strong>project code</strong> (e.g., PROJECT-ATLAS). A user must have an <strong>approved NTK entry</strong> for that project — granted by the project owner or a security officer — regardless of their role or clearance level.</p>
+            </div>
+            <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40 rounded-xl p-4">
+              <div class="text-amber-500 text-lg mb-2">✂️</div>
+              <h4 class="font-display font-bold text-sm mb-1">CRUD-Scoped Permissions</h4>
+              <p class="text-xs text-surface-600 dark:text-surface-300 leading-relaxed">Each NTK approval specifies <strong>exactly</strong> which operations the user may perform: <code class="font-mono text-[0.65rem]">can_create</code>, <code class="font-mono text-[0.65rem]">can_read</code>, <code class="font-mono text-[0.65rem]">can_update</code>, <code class="font-mono text-[0.65rem]">can_delete</code>. An analyst might get Read-only; a project lead might get full CRUD.</p>
+            </div>
+          </div>
+
+          <!-- The Three-Gate Model Visualization -->
+          <div class="bg-surface-50 dark:bg-surface-900/40 border border-surface-200 dark:border-surface-700/40 rounded-xl p-6 mb-8">
+            <h3 class="font-display font-bold text-lg mb-4 text-center">The Three-Gate Access Model</h3>
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-2 text-xs font-mono">
+              <div class="bg-emerald-100 dark:bg-emerald-900/30 border-2 border-emerald-400 dark:border-emerald-600 rounded-xl px-4 py-3 text-center min-w-[140px]">
+                <div class="text-emerald-600 dark:text-emerald-400 font-bold mb-1">GATE 1</div>
+                <div class="text-surface-700 dark:text-surface-300 font-display font-600">Role Check</div>
+                <div class="text-surface-500 text-[0.65rem] mt-1">Can this role perform<br>this type of action?</div>
+              </div>
+              <svg class="w-6 h-6 text-surface-400 shrink-0 rotate-90 sm:rotate-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+              <div class="bg-rose-100 dark:bg-rose-900/30 border-2 border-rose-400 dark:border-rose-600 rounded-xl px-4 py-3 text-center min-w-[140px]">
+                <div class="text-rose-600 dark:text-rose-400 font-bold mb-1">GATE 2</div>
+                <div class="text-surface-700 dark:text-surface-300 font-display font-600">Classification</div>
+                <div class="text-surface-500 text-[0.65rem] mt-1">User clearance ≥<br>data classification?</div>
+              </div>
+              <svg class="w-6 h-6 text-surface-400 shrink-0 rotate-90 sm:rotate-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+              <div class="bg-orange-100 dark:bg-orange-900/30 border-2 border-orange-400 dark:border-orange-600 rounded-xl px-4 py-3 text-center min-w-[140px]">
+                <div class="text-orange-600 dark:text-orange-400 font-bold mb-1">GATE 3</div>
+                <div class="text-surface-700 dark:text-surface-300 font-display font-600">Need-to-Know</div>
+                <div class="text-surface-500 text-[0.65rem] mt-1">Approved NTK for<br>this project + CRUD?</div>
+              </div>
+              <svg class="w-6 h-6 text-surface-400 shrink-0 rotate-90 sm:rotate-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+              <div class="bg-brand-100 dark:bg-brand-900/30 border-2 border-brand-500 rounded-xl px-4 py-3 text-center min-w-[140px]">
+                <div class="text-brand-600 dark:text-brand-400 font-bold mb-1">✅ ACCESS</div>
+                <div class="text-surface-700 dark:text-surface-300 font-display font-600">Granted</div>
+                <div class="text-surface-500 text-[0.65rem] mt-1">Only the CRUD actions<br>approved in NTK</div>
+              </div>
+            </div>
+            <p class="text-xs text-surface-400 dark:text-surface-500 text-center mt-3 font-mono">Any gate failure = ❌ Access Denied (regardless of other gates passing)</p>
+          </div>
+
+          <!-- NTK Approval Workflow -->
+          <h3 class="font-display font-bold text-lg mb-3">NTK Approval Workflow</h3>
+          <div class="space-y-3 mb-8">
+            <div class="flex gap-3"><span class="shrink-0 w-7 h-7 rounded-full bg-rose-500 text-white text-xs flex items-center justify-center font-bold">1</span><div class="text-sm text-surface-600 dark:text-surface-300"><strong>Request:</strong> User submits NTK request specifying the project code, a justification, and which CRUD actions they need.</div></div>
+            <div class="flex gap-3"><span class="shrink-0 w-7 h-7 rounded-full bg-rose-500 text-white text-xs flex items-center justify-center font-bold">2</span><div class="text-sm text-surface-600 dark:text-surface-300"><strong>Review:</strong> The project owner or security officer reviews the request, verifies the user’s clearance level, and evaluates the justification.</div></div>
+            <div class="flex gap-3"><span class="shrink-0 w-7 h-7 rounded-full bg-rose-500 text-white text-xs flex items-center justify-center font-bold">3</span><div class="text-sm text-surface-600 dark:text-surface-300"><strong>Approve with CRUD scope:</strong> The approver grants only the minimum operations needed. For example: <code class="font-mono text-xs bg-surface-100 dark:bg-surface-700 px-1 rounded">can_read = true</code>, all others false.</div></div>
+            <div class="flex gap-3"><span class="shrink-0 w-7 h-7 rounded-full bg-rose-500 text-white text-xs flex items-center justify-center font-bold">4</span><div class="text-sm text-surface-600 dark:text-surface-300"><strong>Expiration:</strong> NTK approvals can have an <code class="font-mono text-xs bg-surface-100 dark:bg-surface-700 px-1 rounded">expires_at</code> date. Expired approvals are automatically denied. Regular review cycles ensure access doesn’t persist beyond need.</div></div>
+            <div class="flex gap-3"><span class="shrink-0 w-7 h-7 rounded-full bg-rose-500 text-white text-xs flex items-center justify-center font-bold">5</span><div class="text-sm text-surface-600 dark:text-surface-300"><strong>Audit:</strong> Every access attempt is logged with classification check result, NTK check result, and whether access was ultimately granted or denied.</div></div>
+          </div>
+
+          <!-- Middleware Code Example -->
+          <h3 class="font-display font-bold text-lg mb-3">Implementation: Express.js Middleware</h3>
+          <div class="code-block bg-surface-900 dark:bg-surface-950 text-emerald-400 rounded-xl p-4 overflow-x-auto mb-6">
+            <pre><span class="text-surface-500">// Three-gate access check middleware</span>
+<span class="text-violet-400">function</span> <span class="text-amber-400">requireClassifiedAccess</span>(crudAction) {
+  <span class="text-violet-400">return</span> <span class="text-violet-400">async</span> (req, res, next) =&gt; {
+    <span class="text-violet-400">const</span> token = req.user; <span class="text-surface-500">// from JWT middleware</span>
+    <span class="text-violet-400">const</span> docId = req.params.id;
+
+    <span class="text-surface-500">// Fetch the document's classification &amp; project code</span>
+    <span class="text-violet-400">const</span> doc = <span class="text-violet-400">await</span> db.query(
+      <span class="text-emerald-400">'SELECT classification_level, project_code FROM documents WHERE id = $1'</span>,
+      [docId]
+    );
+
+    <span class="text-surface-500">// Gate 1: Role check (already handled by keycloak.protect())</span>
+
+    <span class="text-surface-500">// Gate 2: Classification check</span>
+    <span class="text-violet-400">const</span> userLevel = token.classification_level || 0;
+    <span class="text-violet-400">if</span> (userLevel &lt; doc.classification_level) {
+      <span class="text-violet-400">await</span> auditLog(docId, token, <span class="text-emerald-400">'DENIED'</span>, <span class="text-emerald-400">'Classification insufficient'</span>);
+      <span class="text-violet-400">return</span> res.status(403).json({ error: <span class="text-emerald-400">'Classification level insufficient'</span> });
+    }
+
+    <span class="text-surface-500">// Gate 3: Need-to-Know check (for L2+ data with a project code)</span>
+    <span class="text-violet-400">if</span> (doc.project_code &amp;&amp; doc.classification_level &gt;= 2) {
+      <span class="text-violet-400">const</span> ntk = <span class="text-violet-400">await</span> db.query(
+        <span class="text-emerald-400">`SELECT * FROM user_need_to_know
+         WHERE user_id = $1 AND project_code = $2
+           AND status = 'approved'
+           AND (expires_at IS NULL OR expires_at &gt; NOW())`</span>,
+        [token.sub, doc.project_code]
+      );
+
+      <span class="text-violet-400">if</span> (!ntk.rows.length) {
+        <span class="text-violet-400">await</span> auditLog(docId, token, <span class="text-emerald-400">'DENIED'</span>, <span class="text-emerald-400">'No NTK approval'</span>);
+        <span class="text-violet-400">return</span> res.status(403).json({ error: <span class="text-emerald-400">'Need-to-know approval required'</span> });
+      }
+
+      <span class="text-surface-500">// Check specific CRUD permission</span>
+      <span class="text-violet-400">const</span> crudField = <span class="text-emerald-400">`can_${crudAction}`</span>; <span class="text-surface-500">// e.g., can_read</span>
+      <span class="text-violet-400">if</span> (!ntk.rows[0][crudField]) {
+        <span class="text-violet-400">await</span> auditLog(docId, token, <span class="text-emerald-400">'DENIED'</span>, <span class="text-emerald-400">`NTK lacks ${crudAction}`</span>);
+        <span class="text-violet-400">return</span> res.status(403).json({
+          error: <span class="text-emerald-400">`NTK approved but ${crudAction} not permitted`</span>
+        });
+      }
+    }
+
+    <span class="text-violet-400">await</span> auditLog(docId, token, <span class="text-emerald-400">'GRANTED'</span>, crudAction);
+    next();
+  };
+}
+
+<span class="text-surface-500">// Usage in routes</span>
+app.get(<span class="text-emerald-400">'/api/docs/:id'</span>,
+  keycloak.protect(),                      <span class="text-surface-500">// Gate 1: Role</span>
+  requireClassifiedAccess(<span class="text-emerald-400">'read'</span>),       <span class="text-surface-500">// Gate 2+3: Classification + NTK</span>
+  getDocument
+);
+
+app.put(<span class="text-emerald-400">'/api/docs/:id'</span>,
+  keycloak.protect(<span class="text-emerald-400">'manager'</span>),           <span class="text-surface-500">// Gate 1: Manager+ role</span>
+  requireClassifiedAccess(<span class="text-emerald-400">'update'</span>),    <span class="text-surface-500">// Gate 2+3: Classification + NTK</span>
+  updateDocument
+);</pre>
+          </div>
+
+          <!-- Key Insight Box -->
+          <div class="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-700/40 rounded-xl p-5">
+            <h4 class="font-display font-bold text-sm text-rose-700 dark:text-rose-300 mb-2">💡 Why This Matters</h4>
+            <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-3">In traditional RBAC, an executive who should only see marketing data can technically access engineering secrets because their role inherits all lower permissions. The Classification + NTK model ensures that:</p>
+            <div class="grid sm:grid-cols-2 gap-3 text-xs">
+              <div class="flex gap-2 items-start"><span class="shrink-0 text-rose-500">•</span><span class="text-surface-600 dark:text-surface-300"><strong>Lateral access is blocked:</strong> An executive in marketing cannot see finance’s PROJECT-ATLAS data without explicit NTK approval.</span></div>
+              <div class="flex gap-2 items-start"><span class="shrink-0 text-rose-500">•</span><span class="text-surface-600 dark:text-surface-300"><strong>Least-privilege at the data level:</strong> A user might read but not modify, or create but not delete.</span></div>
+              <div class="flex gap-2 items-start"><span class="shrink-0 text-rose-500">•</span><span class="text-surface-600 dark:text-surface-300"><strong>Compliance is auditable:</strong> Every NTK has a justification, approver, and expiration — ready for regulatory review.</span></div>
+              <div class="flex gap-2 items-start"><span class="shrink-0 text-rose-500">•</span><span class="text-surface-600 dark:text-surface-300"><strong>DB-level enforcement:</strong> PostgreSQL RLS ensures even application bugs cannot bypass classification/NTK checks.</span></div>
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -1664,11 +1967,27 @@ docker compose logs -f keycloak | grep <span class="text-emerald-400">"Listening
             </label>
             <label class="check-item flex items-start gap-3 bg-surface-50 dark:bg-surface-900/40 rounded-xl px-4 py-3 cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-800/40 transition">
               <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-surface-300 dark:border-surface-600 text-brand-500 focus:ring-brand-500">
-              <span class="text-sm text-surface-700 dark:text-surface-300">Cell-level security filters data by department</span>
+              <span class="text-sm text-surface-700 dark:text-surface-300">Cell-level security filters by classification + need-to-know</span>
             </label>
             <label class="check-item flex items-start gap-3 bg-surface-50 dark:bg-surface-900/40 rounded-xl px-4 py-3 cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-800/40 transition">
               <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-surface-300 dark:border-surface-600 text-brand-500 focus:ring-brand-500">
               <span class="text-sm text-surface-700 dark:text-surface-300">SSO works across multiple applications</span>
+            </label>
+            <label class="check-item flex items-start gap-3 bg-surface-50 dark:bg-surface-900/40 rounded-xl px-4 py-3 cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-800/40 transition">
+              <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-surface-300 dark:border-surface-600 text-brand-500 focus:ring-brand-500">
+              <span class="text-sm text-surface-700 dark:text-surface-300">User with insufficient classification level is denied access</span>
+            </label>
+            <label class="check-item flex items-start gap-3 bg-surface-50 dark:bg-surface-900/40 rounded-xl px-4 py-3 cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-800/40 transition">
+              <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-surface-300 dark:border-surface-600 text-brand-500 focus:ring-brand-500">
+              <span class="text-sm text-surface-700 dark:text-surface-300">Executive without NTK approval is denied project data</span>
+            </label>
+            <label class="check-item flex items-start gap-3 bg-surface-50 dark:bg-surface-900/40 rounded-xl px-4 py-3 cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-800/40 transition">
+              <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-surface-300 dark:border-surface-600 text-brand-500 focus:ring-brand-500">
+              <span class="text-sm text-surface-700 dark:text-surface-300">NTK with read-only blocks update/delete attempts</span>
+            </label>
+            <label class="check-item flex items-start gap-3 bg-surface-50 dark:bg-surface-900/40 rounded-xl px-4 py-3 cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-800/40 transition">
+              <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-surface-300 dark:border-surface-600 text-brand-500 focus:ring-brand-500">
+              <span class="text-sm text-surface-700 dark:text-surface-300">PostgreSQL RLS filters classified rows at DB layer</span>
             </label>
             <label class="check-item flex items-start gap-3 bg-surface-50 dark:bg-surface-900/40 rounded-xl px-4 py-3 cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-800/40 transition">
               <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-surface-300 dark:border-surface-600 text-brand-500 focus:ring-brand-500">
@@ -1703,7 +2022,72 @@ docker compose logs -f keycloak | grep <span class="text-emerald-400">"Listening
           </button>
           <div id="schema-deep" class="deep-dive-content">
             <div class="code-block bg-surface-900 dark:bg-surface-950 text-emerald-400 rounded-xl p-4 overflow-x-auto">
-              <pre><span class="text-surface-500">-- Documents table</span>
+              <pre><span class="text-surface-500">-- =============================================</span>
+<span class="text-surface-500">-- CLASSIFICATION LEVELS (reference table)</span>
+<span class="text-surface-500">-- =============================================</span>
+CREATE TABLE classification_levels (
+  level INTEGER PRIMARY KEY,      <span class="text-amber-400">-- 0..4</span>
+  name VARCHAR(50) NOT NULL,       <span class="text-amber-400">-- Public, Internal, Confidential, Restricted, Top-Secret</span>
+  requires_ntk BOOLEAN DEFAULT false,
+  description TEXT
+);
+
+INSERT INTO classification_levels VALUES
+  (0, 'Public',       false, 'Publicly available information'),
+  (1, 'Internal',     false, 'General internal company data'),
+  (2, 'Confidential', true,  'Sensitive business data requiring NTK'),
+  (3, 'Restricted',   true,  'Highly sensitive — M&amp;A, security audits'),
+  (4, 'Top-Secret',   true,  'Board-level strategies, legal matters');
+
+<span class="text-surface-500">-- =============================================</span>
+<span class="text-surface-500">-- PROJECT CODES (what data is grouped under)</span>
+<span class="text-surface-500">-- =============================================</span>
+CREATE TABLE projects (
+  code VARCHAR(50) PRIMARY KEY,    <span class="text-amber-400">-- e.g., PROJECT-ATLAS</span>
+  name VARCHAR(255) NOT NULL,
+  owner_id VARCHAR(255) NOT NULL,  <span class="text-amber-400">-- project owner who can grant NTK</span>
+  department VARCHAR(100),
+  classification_level INTEGER REFERENCES classification_levels(level),
+  status VARCHAR(20) DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+<span class="text-surface-500">-- =============================================</span>
+<span class="text-surface-500">-- USER CLASSIFICATION &amp; NEED-TO-KNOW</span>
+<span class="text-surface-500">-- =============================================</span>
+CREATE TABLE user_classifications (
+  user_id VARCHAR(255) PRIMARY KEY,
+  classification_level INTEGER REFERENCES classification_levels(level) DEFAULT 0,
+  granted_by VARCHAR(255) NOT NULL,    <span class="text-amber-400">-- security officer who granted clearance</span>
+  granted_at TIMESTAMP DEFAULT NOW(),
+  expires_at TIMESTAMP,
+  notes TEXT
+);
+
+CREATE TABLE user_need_to_know (
+  id SERIAL PRIMARY KEY,
+  user_id VARCHAR(255) NOT NULL,
+  project_code VARCHAR(50) REFERENCES projects(code),
+  status VARCHAR(20) DEFAULT 'pending', <span class="text-amber-400">-- pending, approved, revoked, expired</span>
+  can_create BOOLEAN DEFAULT false,
+  can_read BOOLEAN DEFAULT false,
+  can_update BOOLEAN DEFAULT false,
+  can_delete BOOLEAN DEFAULT false,
+  approved_by VARCHAR(255),            <span class="text-amber-400">-- project owner or security officer</span>
+  approved_at TIMESTAMP,
+  expires_at TIMESTAMP,
+  justification TEXT,                  <span class="text-amber-400">-- why the user needs access</span>
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(user_id, project_code)
+);
+
+CREATE INDEX idx_ntk_user ON user_need_to_know(user_id);
+CREATE INDEX idx_ntk_project ON user_need_to_know(project_code);
+CREATE INDEX idx_ntk_status ON user_need_to_know(status);
+
+<span class="text-surface-500">-- =============================================</span>
+<span class="text-surface-500">-- DOCUMENTS (with classification + project code)</span>
+<span class="text-surface-500">-- =============================================</span>
 CREATE TABLE documents (
   id SERIAL PRIMARY KEY,
   title VARCHAR(255) NOT NULL,
@@ -1711,7 +2095,8 @@ CREATE TABLE documents (
   owner_id VARCHAR(255) NOT NULL,
   owner_email VARCHAR(255) NOT NULL,
   department VARCHAR(100),
-  classification VARCHAR(50) DEFAULT 'internal',
+  classification_level INTEGER REFERENCES classification_levels(level) DEFAULT 1,
+  project_code VARCHAR(50) REFERENCES projects(code),  <span class="text-amber-400">-- NULL = no NTK required</span>
   is_public BOOLEAN DEFAULT false,
   deleted BOOLEAN DEFAULT false,
   deleted_at TIMESTAMP,
@@ -1722,9 +2107,32 @@ CREATE TABLE documents (
 
 CREATE INDEX idx_documents_owner ON documents(owner_id);
 CREATE INDEX idx_documents_department ON documents(department);
-CREATE INDEX idx_documents_classification ON documents(classification);
+CREATE INDEX idx_documents_classification ON documents(classification_level);
+CREATE INDEX idx_documents_project ON documents(project_code);
 
-<span class="text-surface-500">-- Document shares table</span>
+<span class="text-surface-500">-- Enable Row-Level Security</span>
+ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
+
+<span class="text-surface-500">-- RLS: classification gate</span>
+CREATE POLICY cls_gate ON documents FOR ALL
+  USING (classification_level &lt;= current_setting('app.user_classification', true)::int);
+
+<span class="text-surface-500">-- RLS: need-to-know gate (SELECT)</span>
+CREATE POLICY ntk_read_gate ON documents FOR SELECT
+  USING (
+    project_code IS NULL
+    OR EXISTS (
+      SELECT 1 FROM user_need_to_know u
+      WHERE u.user_id = current_setting('app.user_id', true)
+        AND u.project_code = documents.project_code
+        AND u.status = 'approved' AND u.can_read = true
+        AND (u.expires_at IS NULL OR u.expires_at &gt; NOW())
+    )
+  );
+
+<span class="text-surface-500">-- =============================================</span>
+<span class="text-surface-500">-- DOCUMENT SHARES</span>
+<span class="text-surface-500">-- =============================================</span>
 CREATE TABLE document_shares (
   id SERIAL PRIMARY KEY,
   document_id INTEGER REFERENCES documents(id),
@@ -1734,13 +2142,18 @@ CREATE TABLE document_shares (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
-<span class="text-surface-500">-- Audit log table</span>
+<span class="text-surface-500">-- =============================================</span>
+<span class="text-surface-500">-- AUDIT LOG (tracks all access &amp; NTK decisions)</span>
+<span class="text-surface-500">-- =============================================</span>
 CREATE TABLE document_audit_log (
   id SERIAL PRIMARY KEY,
   document_id INTEGER REFERENCES documents(id),
   action VARCHAR(50) NOT NULL,
   user_id VARCHAR(255) NOT NULL,
   user_email VARCHAR(255) NOT NULL,
+  classification_check BOOLEAN,  <span class="text-amber-400">-- did they pass classification?</span>
+  ntk_check BOOLEAN,             <span class="text-amber-400">-- did they pass need-to-know?</span>
+  access_granted BOOLEAN NOT NULL,
   timestamp TIMESTAMP DEFAULT NOW(),
   details JSONB
 );
@@ -1748,10 +2161,15 @@ CREATE TABLE document_audit_log (
 CREATE INDEX idx_audit_document ON document_audit_log(document_id);
 CREATE INDEX idx_audit_user ON document_audit_log(user_id);
 CREATE INDEX idx_audit_timestamp ON document_audit_log(timestamp);
+CREATE INDEX idx_audit_granted ON document_audit_log(access_granted);
 
-<span class="text-surface-500">-- User profiles table</span>
+<span class="text-surface-500">-- =============================================</span>
+<span class="text-surface-500">-- USER PROFILES</span>
+<span class="text-surface-500">-- =============================================</span>
 CREATE TABLE user_profiles (
   user_id VARCHAR(255) PRIMARY KEY,
+  classification_level INTEGER REFERENCES classification_levels(level) DEFAULT 0,
+  department VARCHAR(100),
   preferences JSONB,
   bio TEXT,
   created_at TIMESTAMP DEFAULT NOW(),
@@ -1769,7 +2187,7 @@ CREATE TABLE user_profiles (
 <!-- ===== FOOTER ===== -->
 <footer class="border-t border-surface-200 dark:border-surface-700/40 bg-white/50 dark:bg-surface-950/50 backdrop-blur-sm py-8">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 text-center">
-    <p class="text-xs text-surface-400 dark:text-surface-500 font-mono">Azure AD (Entra ID) + Keycloak Federation Guide · OIDC · OAuth2 · RBAC · Cell-Level Security · SSO</p>
+    <p class="text-xs text-surface-400 dark:text-surface-500 font-mono">Azure AD (Entra ID) + Keycloak Federation Guide · OIDC · OAuth2 · RBAC · Classification · Need-to-Know · Cell-Level Security · SSO</p>
   </div>
 </footer>
 
@@ -1794,6 +2212,7 @@ const tocSections = [
   { id: 'phase9', label: 'P9 · Monitoring', icon: '📊' },
   { id: 'demo-setup', label: 'Demo Setup', icon: '🧪' },
   { id: 'access-matrix', label: 'Access Matrix', icon: '📋' },
+  { id: 'classification-ntk', label: 'Classification & NTK', icon: '🏷️' },
   { id: 'security', label: 'Best Practices', icon: '🔐' },
   { id: 'checklist', label: 'Testing Checklist', icon: '✓' },
   { id: 'schema', label: 'Database Schema', icon: '🗄' },
@@ -2109,7 +2528,7 @@ const sectionData = [
       { type: 'number', text: 'Azure AD groups map to correct Keycloak roles' },
       { type: 'number', text: 'Access tokens contain correct roles in realm_access.roles' },
       { type: 'number', text: 'Application enforces role-based access correctly' },
-      { type: 'number', text: 'Cell-level security filters data by department' },
+      { type: 'number', text: 'Cell-level security filters by classification + need-to-know' },
       { type: 'number', text: 'SSO works across multiple applications' },
       { type: 'number', text: 'Logout works properly (both Keycloak and Azure AD)' },
       { type: 'number', text: 'Token refresh works seamlessly' },
@@ -2173,7 +2592,9 @@ const sectionData = [
     title: 'Database Schema',
     content: [
       { type: 'p', text: 'PostgreSQL schema for the document repository system with RBAC and cell-level security.' },
-      { type: 'code', text: 'CREATE TABLE documents (\n  id SERIAL PRIMARY KEY,\n  title VARCHAR(255) NOT NULL,\n  content TEXT,\n  owner_id VARCHAR(255) NOT NULL,\n  owner_email VARCHAR(255) NOT NULL,\n  department VARCHAR(100),\n  classification VARCHAR(50) DEFAULT \'internal\',\n  is_public BOOLEAN DEFAULT false,\n  deleted BOOLEAN DEFAULT false,\n  created_at TIMESTAMP DEFAULT NOW(),\n  updated_at TIMESTAMP DEFAULT NOW()\n);' },
+      { type: 'code', text: 'CREATE TABLE classification_levels (\n  level INTEGER PRIMARY KEY,  -- 0..4\n  name VARCHAR(50) NOT NULL,\n  requires_ntk BOOLEAN DEFAULT false,\n  description TEXT\n);\n\nCREATE TABLE projects (\n  code VARCHAR(50) PRIMARY KEY,\n  name VARCHAR(255) NOT NULL,\n  owner_id VARCHAR(255) NOT NULL,\n  department VARCHAR(100),\n  classification_level INTEGER,\n  status VARCHAR(20) DEFAULT \'active\'\n);' },
+      { type: 'code', text: 'CREATE TABLE user_classifications (\n  user_id VARCHAR(255) PRIMARY KEY,\n  classification_level INTEGER DEFAULT 0,\n  granted_by VARCHAR(255) NOT NULL,\n  granted_at TIMESTAMP DEFAULT NOW(),\n  expires_at TIMESTAMP\n);\n\nCREATE TABLE user_need_to_know (\n  id SERIAL PRIMARY KEY,\n  user_id VARCHAR(255) NOT NULL,\n  project_code VARCHAR(50) REFERENCES projects(code),\n  status VARCHAR(20) DEFAULT \'pending\',\n  can_create BOOLEAN DEFAULT false,\n  can_read BOOLEAN DEFAULT false,\n  can_update BOOLEAN DEFAULT false,\n  can_delete BOOLEAN DEFAULT false,\n  approved_by VARCHAR(255),\n  expires_at TIMESTAMP,\n  justification TEXT,\n  UNIQUE(user_id, project_code)\n);' },
+      { type: 'code', text: 'CREATE TABLE documents (\n  id SERIAL PRIMARY KEY,\n  title VARCHAR(255) NOT NULL,\n  content TEXT,\n  owner_id VARCHAR(255) NOT NULL,\n  owner_email VARCHAR(255) NOT NULL,\n  department VARCHAR(100),\n  classification_level INTEGER DEFAULT 1,\n  project_code VARCHAR(50) REFERENCES projects(code),\n  is_public BOOLEAN DEFAULT false,\n  deleted BOOLEAN DEFAULT false,\n  created_at TIMESTAMP DEFAULT NOW(),\n  updated_at TIMESTAMP DEFAULT NOW()\n);' },
       { type: 'code', text: 'CREATE TABLE document_shares (\n  id SERIAL PRIMARY KEY,\n  document_id INTEGER REFERENCES documents(id),\n  shared_by VARCHAR(255) NOT NULL,\n  shared_with_email VARCHAR(255) NOT NULL,\n  permissions JSONB,\n  created_at TIMESTAMP DEFAULT NOW()\n);' },
       { type: 'code', text: 'CREATE TABLE document_audit_log (\n  id SERIAL PRIMARY KEY,\n  document_id INTEGER REFERENCES documents(id),\n  action VARCHAR(50) NOT NULL,\n  user_id VARCHAR(255) NOT NULL,\n  user_email VARCHAR(255) NOT NULL,\n  timestamp TIMESTAMP DEFAULT NOW(),\n  details JSONB\n);' },
       { type: 'code', text: 'CREATE TABLE user_profiles (\n  user_id VARCHAR(255) PRIMARY KEY,\n  preferences JSONB,\n  bio TEXT,\n  created_at TIMESTAMP DEFAULT NOW(),\n  updated_at TIMESTAMP DEFAULT NOW()\n);' },
@@ -2194,6 +2615,7 @@ const deepDiveMap = {
   'phase7-9': 'phase7-deep',
   'demo-setup': 'demo-deep',
   'database-schema': 'schema-deep',
+  'classification-ntk': null,
 };
 
 /**
