@@ -348,6 +348,18 @@
         Download by Sections (.docx)
       </button>
     </div>
+    <!-- Deep dive toggle -->
+    <label id="deep-dive-toggle" class="mt-4 inline-flex items-center gap-2.5 cursor-pointer select-none group">
+      <span class="relative">
+        <input type="checkbox" id="include-deep-dives" class="sr-only peer">
+        <span class="block w-10 h-6 rounded-full bg-surface-200 dark:bg-surface-700 peer-checked:bg-brand-500 transition-colors duration-200"></span>
+        <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 peer-checked:translate-x-4"></span>
+      </span>
+      <span class="text-sm font-display font-500 text-surface-600 dark:text-surface-300 group-hover:text-surface-900 dark:group-hover:text-surface-100 transition-colors">
+        Include Deep Dives
+      </span>
+      <span class="text-xs text-surface-400 dark:text-surface-500 font-mono">(+30 pages)</span>
+    </label>
   </div>
 </header>
 
@@ -2170,31 +2182,114 @@ const sectionData = [
 ];
 
 // Build docx content from section data
-function buildDocxParagraphs(sections, numbering) {
+// deepDiveMap maps sectionData id → deep-dive panel DOM id
+const deepDiveMap = {
+  'architecture': 'arch-deep',
+  'phase1': 'phase1-deep',
+  'phase2': 'phase2-deep',
+  'phase3': 'phase3-deep',
+  'phase4': 'phase4-deep',
+  'phase5': 'phase5-deep',
+  'phase6': 'phase6-deep',
+  'phase7-9': 'phase7-deep',
+  'demo-setup': 'demo-deep',
+  'database-schema': 'schema-deep',
+};
+
+/**
+ * Extract deep dive content from the DOM and return it as an
+ * array of {type, text} items matching the sectionData format.
+ */
+function extractDeepDive(sectionId) {
+  const panelId = deepDiveMap[sectionId];
+  if (!panelId) return [];
+  const wrapper = document.getElementById(panelId);
+  if (!wrapper) return [];
+  const panel = wrapper.querySelector('.deep-dive-panel');
+  if (!panel) return [];
+
+  const items = [];
+
+  // Walk top-level children of the panel
+  const walk = (root) => {
+    for (const node of root.children) {
+      const tag = node.tagName?.toLowerCase();
+
+      // h4 headings → h3 items (sub-headings in docx)
+      if (tag === 'h4') {
+        const text = node.textContent.replace(/^[🔄🔬🔗💻🔒📊🧪🗄️\s]+/, '').trim();
+        if (text) items.push({ type: 'h3', text });
+        continue;
+      }
+
+      // paragraphs
+      if (tag === 'p') {
+        const text = node.textContent.trim();
+        if (text.length > 5) items.push({ type: 'p', text });
+        continue;
+      }
+
+      // pre / code blocks
+      if (tag === 'pre') {
+        items.push({ type: 'code', text: node.textContent.trim() });
+        continue;
+      }
+
+      // inner-block div (highlighted box) — treat as paragraph
+      if (node.classList?.contains('inner-block')) {
+        const text = node.textContent.trim();
+        if (text) items.push({ type: 'p', text });
+        continue;
+      }
+
+      // div containers — recurse one level
+      if (tag === 'div') {
+        // Check for numbered flow steps (demo-deep uses flex items with number spans)
+        const numSpan = node.querySelector(':scope > span.shrink-0');
+        if (numSpan && /^\d+\.?$/.test(numSpan.textContent.trim())) {
+          const rest = node.textContent.replace(numSpan.textContent, '').trim();
+          if (rest) items.push({ type: 'number', text: rest });
+          continue;
+        }
+        walk(node);
+      }
+
+      // space-y containers
+      if (tag === 'div' && (node.classList?.contains('space-y-3') || node.classList?.contains('space-y-4') || node.classList?.contains('space-y-2') || node.classList?.contains('space-y-5'))) {
+        // Already handled by generic div recurse above
+        continue;
+      }
+    }
+  };
+
+  walk(panel);
+  return items;
+}
+
+function buildDocxParagraphs(sections, numbering, includeDeepDives) {
   const paras = [];
   const border = { style: BorderStyle.SINGLE, size: 1, color: 'BBBBBB' };
   const borders = { top: border, bottom: border, left: border, right: border };
 
-  sections.forEach((sec, si) => {
-    if (si > 0) paras.push(new Paragraph({ children: [new PageBreak()] }));
-
-    paras.push(new Paragraph({
-      heading: HeadingLevel.HEADING_1,
-      spacing: { after: 200 },
-      children: [new TextRun({ text: sec.title, bold: true, size: 32, font: 'Arial' })]
-    }));
-
-    sec.content.forEach(item => {
+  // Helper: render an array of {type, text} items into docx paragraphs
+  function renderItems(contentArr, isDeepDive) {
+    const ddColor = isDeepDive ? '1a4a6e' : undefined;
+    const ddItalic = isDeepDive;
+    contentArr.forEach(item => {
       if (item.type === 'h3') {
         paras.push(new Paragraph({
           heading: HeadingLevel.HEADING_2,
           spacing: { before: 240, after: 120 },
-          children: [new TextRun({ text: item.text, bold: true, size: 26, font: 'Arial' })]
+          children: [new TextRun({
+            text: item.text, bold: true, size: 26, font: 'Arial',
+            ...(isDeepDive ? { color: '1E6B71' } : {})
+          })]
         }));
       } else if (item.type === 'p') {
         paras.push(new Paragraph({
           spacing: { after: 160 },
-          children: [new TextRun({ text: item.text, size: 22, font: 'Arial' })]
+          ...(isDeepDive ? { indent: { left: 180 } } : {}),
+          children: [new TextRun({ text: item.text, size: 22, font: 'Arial', ...(isDeepDive ? { color: '475569' } : {}) })]
         }));
       } else if (item.type === 'bullet') {
         paras.push(new Paragraph({
@@ -2248,11 +2343,45 @@ function buildDocxParagraphs(sections, numbering) {
         }));
       }
     });
+  }
+
+  sections.forEach((sec, si) => {
+    if (si > 0) paras.push(new Paragraph({ children: [new PageBreak()] }));
+
+    paras.push(new Paragraph({
+      heading: HeadingLevel.HEADING_1,
+      spacing: { after: 200 },
+      children: [new TextRun({ text: sec.title, bold: true, size: 32, font: 'Arial' })]
+    }));
+
+    // Render main content
+    renderItems(sec.content, false);
+
+    // Conditionally append deep dive content
+    if (includeDeepDives) {
+      const ddItems = extractDeepDive(sec.id);
+      if (ddItems.length > 0) {
+        // Separator
+        paras.push(new Paragraph({ spacing: { before: 360, after: 80 } }));
+        // Deep Dive banner with teal shading
+        paras.push(new Paragraph({
+          spacing: { before: 0, after: 200 },
+          shading: { fill: 'E0F7FA', type: ShadingType.CLEAR },
+          indent: { left: 0, right: 0 },
+          border: { left: { style: BorderStyle.SINGLE, size: 6, color: '1E6B71', space: 8 } },
+          children: [
+            new TextRun({ text: '  📘  DEEP DIVE — ', bold: true, size: 22, font: 'Arial', color: '1E6B71' }),
+            new TextRun({ text: sec.title, bold: true, size: 22, font: 'Arial', color: '1E6B71', italics: true })
+          ]
+        }));
+        renderItems(ddItems, true);
+      }
+    }
   });
   return paras;
 }
 
-function createDocxDocument(sections) {
+function createDocxDocument(sections, includeDeepDives) {
   return new Document({
     styles: {
       default: { document: { run: { font: 'Arial', size: 22 } } },
@@ -2292,18 +2421,19 @@ function createDocxDocument(sections) {
           children: [new TextRun({ text: 'Page ', size: 16, font: 'Arial', color: '94A3B8' }), new TextRun({ children: [PageNumber.CURRENT], size: 16, font: 'Arial', color: '94A3B8' })]
         })] })
       },
-      children: buildDocxParagraphs(sections, null)
+      children: buildDocxParagraphs(sections, null, includeDeepDives)
     }]
   });
 }
 
 async function downloadAll(btn, bySections) {
+  const includeDeepDives = document.getElementById('include-deep-dives')?.checked || false;
   btn.classList.add('loading');
   try {
     if (bySections) {
       // Download each section as a separate file
       for (const sec of sectionData) {
-        const doc = createDocxDocument([sec]);
+        const doc = createDocxDocument([sec], includeDeepDives);
         const blob = await Packer.toBlob(doc);
         const safeName = sec.title.replace(/[^a-zA-Z0-9]+/g, '_').replace(/_+/g, '_');
         saveAs(blob, `${safeName}.docx`);
@@ -2311,9 +2441,10 @@ async function downloadAll(btn, bySections) {
       }
     } else {
       // Download all as one document
-      const doc = createDocxDocument(sectionData);
+      const doc = createDocxDocument(sectionData, includeDeepDives);
       const blob = await Packer.toBlob(doc);
-      saveAs(blob, 'Azure_AD_Keycloak_Federation_Complete_Guide.docx');
+      const suffix = includeDeepDives ? '_with_Deep_Dives' : '';
+      saveAs(blob, `Azure_AD_Keycloak_Federation_Complete_Guide${suffix}.docx`);
     }
   } catch (err) {
     console.error('Download error:', err);
@@ -2344,9 +2475,10 @@ document.querySelectorAll('.section-card').forEach(card => {
   dlBtn.title = 'Download this section as .docx';
   dlBtn.innerHTML = `<div class="dl-spinner"></div><svg class="dl-icon w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg><span class="hidden sm:inline">.docx</span>`;
   dlBtn.onclick = async function() {
+    const includeDD = document.getElementById('include-deep-dives')?.checked || false;
     this.classList.add('loading');
     try {
-      const doc = createDocxDocument(matchedSections);
+      const doc = createDocxDocument(matchedSections, includeDD);
       const blob = await Packer.toBlob(doc);
       const name = matchedSections[0].title.replace(/[^a-zA-Z0-9]+/g, '_');
       saveAs(blob, `${name}.docx`);
