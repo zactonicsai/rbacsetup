@@ -165,7 +165,95 @@
       transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     }
     #mobile-toc.open { transform: translateX(0); }
+
+    /* ===== DARK MODE DEEP DIVE FIXES ===== */
+    .dark .deep-dive-panel {
+      background: rgba(14, 16, 25, 0.7) !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+      backdrop-filter: blur(8px);
+    }
+    .dark .deep-dive-panel h4 {
+      color: #e2e8f0 !important;
+    }
+    .dark .deep-dive-panel p,
+    .dark .deep-dive-panel li,
+    .dark .deep-dive-panel span:not(.shrink-0) {
+      color: #cbd5e1 !important;
+    }
+    .dark .deep-dive-panel strong {
+      color: #f1f5f9 !important;
+    }
+    .dark .deep-dive-panel code {
+      background: rgba(255, 255, 255, 0.1) !important;
+      color: #93c5fd !important;
+    }
+    .dark .deep-dive-panel .inner-block {
+      background: rgba(255, 255, 255, 0.05) !important;
+      border-color: rgba(255, 255, 255, 0.08) !important;
+    }
+    .dark .deep-dive-panel pre {
+      color: #a5b4fc !important;
+    }
+
+    /* Deep dive accent bars per phase */
+    .deep-dive-panel { position: relative; overflow: hidden; }
+    .deep-dive-panel::before {
+      content: '';
+      position: absolute; top: 0; left: 0; bottom: 0; width: 3px;
+    }
+    .deep-dive-panel[data-accent="brand"]::before { background: #28a5a8; }
+    .deep-dive-panel[data-accent="blue"]::before { background: #3b82f6; }
+    .deep-dive-panel[data-accent="violet"]::before { background: #8b5cf6; }
+    .deep-dive-panel[data-accent="emerald"]::before { background: #10b981; }
+    .deep-dive-panel[data-accent="rose"]::before { background: #f43f5e; }
+    .deep-dive-panel[data-accent="amber"]::before { background: #f59e0b; }
+    .deep-dive-panel[data-accent="indigo"]::before { background: #6366f1; }
+
+    /* Download buttons */
+    .dl-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: 'Outfit', sans-serif; font-weight: 600;
+      font-size: 0.75rem; padding: 6px 14px;
+      border-radius: 10px; border: 1px solid;
+      transition: all 0.25s ease; cursor: pointer;
+      background: transparent;
+    }
+    .dl-btn:hover { transform: translateY(-1px); }
+    .dl-btn-section {
+      color: #64748b; border-color: #e2e8f0;
+    }
+    .dl-btn-section:hover {
+      color: #28a5a8; border-color: #28a5a8; background: rgba(40, 165, 168, 0.06);
+    }
+    .dark .dl-btn-section {
+      color: #94a3b8; border-color: #334155;
+    }
+    .dark .dl-btn-section:hover {
+      color: #5eead4; border-color: #5eead4; background: rgba(94, 234, 212, 0.08);
+    }
+    .dl-btn-all {
+      color: #fff; border-color: transparent;
+      background: linear-gradient(135deg, #28a5a8, #1e6b71);
+      box-shadow: 0 2px 12px rgba(40, 165, 168, 0.3);
+    }
+    .dl-btn-all:hover {
+      box-shadow: 0 4px 20px rgba(40, 165, 168, 0.45);
+    }
+
+    /* Download spinner */
+    @keyframes dl-spin { to { transform: rotate(360deg); } }
+    .dl-spinner {
+      width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff; border-radius: 50%;
+      animation: dl-spin 0.6s linear infinite; display: none;
+    }
+    .dl-btn.loading .dl-spinner { display: block; }
+    .dl-btn.loading .dl-icon { display: none; }
   </style>
+
+  <!-- DOCX generation libraries -->
+  <script src="https://unpkg.com/docx@9.0.2/build/index.umd.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 </head>
 <body class="bg-surface-50 text-surface-900 dark:bg-surface-950 dark:text-surface-100 transition-colors duration-300">
 
@@ -247,6 +335,19 @@
       <span class="bg-surface-100 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 px-3 py-1.5 rounded-full">RBAC</span>
       <span class="bg-surface-100 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 px-3 py-1.5 rounded-full">Cell-Level Security</span>
     </div>
+
+    <!-- Download buttons -->
+    <div class="mt-8 flex flex-wrap justify-center gap-3">
+      <button onclick="downloadAll(this)" class="dl-btn dl-btn-all">
+        <div class="dl-spinner"></div>
+        <svg class="dl-icon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Download Complete Guide (.docx)
+      </button>
+      <button onclick="downloadAll(this, true)" class="dl-btn dl-btn-section">
+        <svg class="dl-icon w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+        Download by Sections (.docx)
+      </button>
+    </div>
   </div>
 </header>
 
@@ -321,7 +422,7 @@
             Deep Dive: How the Flow Works
           </button>
           <div id="arch-deep" class="deep-dive-content mt-6">
-            <div class="bg-brand-50/50 dark:bg-brand-950/20 border border-brand-200 dark:border-brand-800/40 rounded-xl p-6">
+            <div class="deep-dive-panel bg-brand-50 dark:bg-surface-800 border border-brand-200 dark:border-brand-800/60 rounded-xl p-6 pl-7" data-accent="brand">
               <h4 class="font-display font-bold text-lg text-brand-700 dark:text-brand-300 mb-3">🔄 Authentication Flow Step-by-Step</h4>
               <div class="space-y-3 text-sm text-surface-700 dark:text-surface-300 leading-relaxed">
                 <div class="flex gap-3"><span class="shrink-0 w-6 h-6 rounded-full bg-brand-500 text-white text-xs flex items-center justify-center font-bold">1</span><p><strong>User visits your application</strong> — The app detects no active session and redirects the user to Keycloak's login page.</p></div>
@@ -334,7 +435,7 @@
                 <div class="flex gap-3"><span class="shrink-0 w-6 h-6 rounded-full bg-brand-500 text-white text-xs flex items-center justify-center font-bold">8</span><p><strong>Keycloak creates its own session & tokens</strong> — Keycloak issues its own JWT access token enriched with realm roles, department attributes, and custom claims. This token is what your application actually validates.</p></div>
                 <div class="flex gap-3"><span class="shrink-0 w-6 h-6 rounded-full bg-brand-500 text-white text-xs flex items-center justify-center font-bold">9</span><p><strong>Application enforces RBAC & cell-level security</strong> — Your app reads the JWT, checks the user's roles and attributes, and grants/denies access to resources accordingly.</p></div>
               </div>
-              <div class="mt-5 p-4 bg-white/60 dark:bg-surface-900/40 rounded-lg border border-brand-200/50 dark:border-brand-800/30">
+              <div class="mt-5 p-4 inner-block bg-white/60 dark:bg-surface-900/60 rounded-lg border border-brand-200/50 dark:border-white/10">
                 <p class="text-xs font-mono text-surface-500 dark:text-surface-400"><strong class="text-brand-600 dark:text-brand-400">Key concept:</strong> Keycloak acts as a <em>broker</em> — it federates identity from Azure AD but maintains its own sessions and tokens. This decouples your applications from any single identity provider, so you could add Google, Okta, or LDAP without changing application code.</p>
               </div>
             </div>
@@ -409,7 +510,7 @@ Save these values:
             <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-3">
               Keycloak needs credentials to authenticate to Azure AD. Go to <strong>Certificates & Secrets → New Client Secret</strong>. Copy the secret <em>value</em> immediately — you cannot retrieve it later. Set expiry to 24 months or per your security policy.
             </p>
-            <div class="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 rounded-xl p-4 text-sm text-amber-800 dark:text-amber-300">
+            <div class="bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700/50 rounded-xl p-4 text-sm text-amber-800 dark:text-amber-200">
               ⚠️ <strong>Critical:</strong> Copy the secret VALUE immediately after creation. Azure AD will only show it once. Store it securely in a secrets manager.
             </div>
           </div>
@@ -449,7 +550,7 @@ Save these values:
             Deep Dive: Azure AD Concepts
           </button>
           <div id="phase1-deep" class="deep-dive-content mt-6">
-            <div class="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40 rounded-xl p-6 space-y-4 text-sm text-surface-700 dark:text-surface-300 leading-relaxed">
+            <div class="deep-dive-panel bg-blue-50 dark:bg-surface-800 border border-blue-200 dark:border-blue-800/60 rounded-xl p-6 pl-7 space-y-4 text-sm text-surface-700 dark:text-surface-300 leading-relaxed" data-accent="blue">
               <div>
                 <h4 class="font-display font-bold text-blue-700 dark:text-blue-300 mb-1">What is a Tenant?</h4>
                 <p>A tenant is a dedicated, isolated instance of Azure AD that an organization receives when it signs up for a Microsoft cloud service. Think of it as your organization's private directory in the cloud. Every user, group, and app registration lives within a specific tenant. The Tenant ID (a GUID) uniquely identifies it across all of Microsoft's infrastructure.</p>
@@ -525,7 +626,7 @@ export KEYCLOAK_ADMIN_PASSWORD=admin123!
             Deep Dive: Keycloak Concepts
           </button>
           <div id="phase2-deep" class="deep-dive-content mt-6">
-            <div class="bg-brand-50/50 dark:bg-brand-950/20 border border-brand-200 dark:border-brand-800/40 rounded-xl p-6 space-y-4 text-sm text-surface-700 dark:text-surface-300 leading-relaxed">
+            <div class="deep-dive-panel bg-brand-50 dark:bg-surface-800 border border-brand-200 dark:border-brand-800/60 rounded-xl p-6 pl-7 space-y-4 text-sm text-surface-700 dark:text-surface-300 leading-relaxed" data-accent="brand">
               <div>
                 <h4 class="font-display font-bold text-brand-700 dark:text-brand-300 mb-1">Realms: Multi-Tenancy in Keycloak</h4>
                 <p>A Realm is a space where you manage a set of users, credentials, roles, and groups. Realms are completely isolated from each other. The <code class="text-xs bg-surface-200 dark:bg-surface-700 px-1 rounded font-mono">master</code> realm is a special admin realm — you should create separate realms for your applications. Think of each realm like a separate Keycloak installation.</p>
@@ -596,7 +697,7 @@ Trust Email:    ON</pre>
             Deep Dive: OIDC & Federation
           </button>
           <div id="phase3-deep" class="deep-dive-content mt-6">
-            <div class="bg-violet-50/50 dark:bg-violet-950/20 border border-violet-200 dark:border-violet-800/40 rounded-xl p-6 space-y-4 text-sm text-surface-700 dark:text-surface-300 leading-relaxed">
+            <div class="deep-dive-panel bg-violet-50 dark:bg-surface-800 border border-violet-200 dark:border-violet-800/60 rounded-xl p-6 pl-7 space-y-4 text-sm text-surface-700 dark:text-surface-300 leading-relaxed" data-accent="violet">
               <div>
                 <h4 class="font-display font-bold text-violet-700 dark:text-violet-300 mb-1">OIDC Discovery Endpoint</h4>
                 <p>The <code class="text-xs bg-surface-200 dark:bg-surface-700 px-1 rounded font-mono">.well-known/openid-configuration</code> URL returns a JSON document describing all the endpoints (authorization, token, userinfo, JWKS), supported scopes, claims, and algorithms. Keycloak reads this once during setup, so it automatically knows where to send users for login, where to exchange codes for tokens, and where to find the public keys for JWT validation.</p>
@@ -651,7 +752,7 @@ A "director" automatically has manager + employee permissions</pre>
             Deep Dive: RBAC Concepts
           </button>
           <div id="phase4-deep" class="deep-dive-content mt-6">
-            <div class="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 rounded-xl p-6 space-y-4 text-sm text-surface-700 dark:text-surface-300 leading-relaxed">
+            <div class="deep-dive-panel bg-emerald-50 dark:bg-surface-800 border border-emerald-200 dark:border-emerald-800/60 rounded-xl p-6 pl-7 space-y-4 text-sm text-surface-700 dark:text-surface-300 leading-relaxed" data-accent="emerald">
               <div>
                 <h4 class="font-display font-bold text-emerald-700 dark:text-emerald-300 mb-1">Why Composite Roles?</h4>
                 <p>Composite roles create an inheritance chain. Instead of assigning 15 individual permissions to a director, you assign one "director" role that automatically includes manager and employee permissions. This reduces administrative overhead and ensures consistency — when you add a new base permission, every composite role above it inherits it automatically.</p>
@@ -662,7 +763,7 @@ A "director" automatically has manager + employee permissions</pre>
               </div>
               <div>
                 <h4 class="font-display font-bold text-emerald-700 dark:text-emerald-300 mb-1">Role Composition in Detail</h4>
-                <div class="code-block bg-white/60 dark:bg-surface-900/40 rounded-lg p-3 mt-2">
+                <div class="code-block inner-block bg-white/60 dark:bg-surface-900/60 rounded-lg p-3 mt-2 border border-transparent dark:border-white/5">
                   <pre class="text-xs">employee: document:read, document:create, profile:read-own,
           profile:update-own, access-public, access-internal
 
@@ -697,13 +798,13 @@ executive: ↑ director + profile:read-all, access-top-secret,
           <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-4">Register your application as a Keycloak client, configure client scopes to include roles in JWT tokens, then implement cell-level security using user attributes and Keycloak's Authorization Services.</p>
 
           <div class="grid sm:grid-cols-2 gap-4 mb-6">
-            <div class="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800/40 rounded-xl p-4">
+            <div class="bg-rose-50 dark:bg-rose-900/25 border border-rose-200 dark:border-rose-700/40 rounded-xl p-4">
               <h4 class="font-display font-bold text-sm text-rose-700 dark:text-rose-300 mb-2">Approach 1: User Attributes</h4>
-              <p class="text-xs text-surface-600 dark:text-surface-400 leading-relaxed">Add attributes like <code class="font-mono">department</code>, <code class="font-mono">region</code>, <code class="font-mono">data_classification</code> to users. Map them into access tokens via client scope mappers. Application code reads these from the JWT to filter data.</p>
+              <p class="text-xs text-surface-600 dark:text-surface-300 leading-relaxed">Add attributes like <code class="font-mono">department</code>, <code class="font-mono">region</code>, <code class="font-mono">data_classification</code> to users. Map them into access tokens via client scope mappers. Application code reads these from the JWT to filter data.</p>
             </div>
-            <div class="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800/40 rounded-xl p-4">
+            <div class="bg-rose-50 dark:bg-rose-900/25 border border-rose-200 dark:border-rose-700/40 rounded-xl p-4">
               <h4 class="font-display font-bold text-sm text-rose-700 dark:text-rose-300 mb-2">Approach 2: Authorization Services</h4>
-              <p class="text-xs text-surface-600 dark:text-surface-400 leading-relaxed">Define Resources, Scopes, Policies, and Permissions in Keycloak. Policies can be role-based, JavaScript-based, or time-based. Keycloak evaluates policies at runtime and returns authorization decisions.</p>
+              <p class="text-xs text-surface-600 dark:text-surface-300 leading-relaxed">Define Resources, Scopes, Policies, and Permissions in Keycloak. Policies can be role-based, JavaScript-based, or time-based. Keycloak evaluates policies at runtime and returns authorization decisions.</p>
             </div>
           </div>
 
@@ -712,7 +813,7 @@ executive: ↑ director + profile:read-all, access-top-secret,
             Deep Dive: Cell-Level Security
           </button>
           <div id="phase5-deep" class="deep-dive-content mt-6">
-            <div class="bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800/40 rounded-xl p-6 space-y-4 text-sm text-surface-700 dark:text-surface-300 leading-relaxed">
+            <div class="deep-dive-panel bg-rose-50 dark:bg-surface-800 border border-rose-200 dark:border-rose-800/60 rounded-xl p-6 pl-7 space-y-4 text-sm text-surface-700 dark:text-surface-300 leading-relaxed" data-accent="rose">
               <div>
                 <h4 class="font-display font-bold text-rose-700 dark:text-rose-300 mb-1">What Is Cell-Level Security?</h4>
                 <p>Unlike RBAC (which controls what actions you can perform), cell-level security controls which specific data items you can see. A "manager" might have read access to documents, but cell-level security ensures they only see documents from their own department, not every department's documents. It's the difference between "can you read documents?" (RBAC) and "which documents can you read?" (cell-level).</p>
@@ -724,7 +825,7 @@ executive: ↑ director + profile:read-all, access-top-secret,
               <div>
                 <h4 class="font-display font-bold text-rose-700 dark:text-rose-300 mb-1">PostgreSQL Row-Level Security</h4>
                 <p>For the deepest level of protection, use database-level row security. PostgreSQL's RLS policies automatically filter query results based on session variables set from the JWT token. Even if application code has a bug that skips a permission check, the database itself enforces the access rules — it's defense in depth.</p>
-                <div class="code-block bg-white/60 dark:bg-surface-900/40 rounded-lg p-3 mt-2">
+                <div class="code-block inner-block bg-white/60 dark:bg-surface-900/60 rounded-lg p-3 mt-2 border border-transparent dark:border-white/5">
                   <pre class="text-xs"><span class="text-rose-400">-- Enable RLS on the table</span>
 ALTER TABLE financial_records ENABLE ROW LEVEL SECURITY;
 
@@ -782,7 +883,7 @@ await db.query(`SET app.user_department = $1`, [token.department]);</pre>
             Deep Dive: SSO & Token Concepts
           </button>
           <div id="phase6-deep" class="deep-dive-content mt-6">
-            <div class="bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 rounded-xl p-6 space-y-4 text-sm text-surface-700 dark:text-surface-300 leading-relaxed">
+            <div class="deep-dive-panel bg-amber-50 dark:bg-surface-800 border border-amber-200 dark:border-amber-800/60 rounded-xl p-6 pl-7 space-y-4 text-sm text-surface-700 dark:text-surface-300 leading-relaxed" data-accent="amber">
               <div>
                 <h4 class="font-display font-bold text-amber-700 dark:text-amber-300 mb-1">How SSO Works Across Applications</h4>
                 <p>When a user logs in to App A, Keycloak creates a session cookie in the browser. When the user then visits App B, that app redirects to Keycloak, but Keycloak sees the existing session cookie and immediately redirects back with new tokens — no login prompt. The user perceives instant access across all connected apps.</p>
@@ -835,7 +936,7 @@ app.get('/api/finance', keycloak.protect(), (req, res) => {
             Deep Dive: Code Patterns
           </button>
           <div id="phase7-deep" class="deep-dive-content mt-6">
-            <div class="bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-800/40 rounded-xl p-6 space-y-4 text-sm text-surface-700 dark:text-surface-300 leading-relaxed">
+            <div class="deep-dive-panel bg-indigo-50 dark:bg-surface-800 border border-indigo-200 dark:border-indigo-800/60 rounded-xl p-6 pl-7 space-y-4 text-sm text-surface-700 dark:text-surface-300 leading-relaxed" data-accent="indigo">
               <div>
                 <h4 class="font-display font-bold text-indigo-700 dark:text-indigo-300 mb-1">The keycloak-connect Middleware</h4>
                 <p>The <code class="text-xs bg-surface-200 dark:bg-surface-700 px-1 rounded font-mono">keycloak-connect</code> package handles the entire OIDC flow for your Express app. <code class="text-xs bg-surface-200 dark:bg-surface-700 px-1 rounded font-mono">keycloak.protect()</code> checks for a valid session/token and redirects to login if missing. <code class="text-xs bg-surface-200 dark:bg-surface-700 px-1 rounded font-mono">keycloak.protect('admin')</code> additionally verifies the user has the specified realm role. The token content is available at <code class="text-xs bg-surface-200 dark:bg-surface-700 px-1 rounded font-mono">req.kauth.grant.access_token.content</code>.</p>
@@ -1355,6 +1456,402 @@ function closeMobileToc() {
 // Init
 updateProgress();
 updateActiveToc();
+
+// === DOWNLOAD FUNCTIONALITY ===
+const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+        HeadingLevel, AlignmentType, BorderStyle, WidthType, ShadingType,
+        PageBreak, Header, Footer, PageNumber, LevelFormat } = docx;
+
+// Section content data for DOCX generation
+const sectionData = [
+  {
+    id: 'architecture',
+    title: 'Architecture Overview',
+    content: [
+      { type: 'p', text: 'This guide walks through building an enterprise-grade identity and access management system connecting Microsoft\'s cloud identity platform with Keycloak as an identity broker.' },
+      { type: 'h3', text: 'Core Components' },
+      { type: 'bullet', text: 'Azure AD (Microsoft Entra ID): Primary Identity Provider — authenticates users against Microsoft\'s cloud directory.' },
+      { type: 'bullet', text: 'Keycloak: Identity Broker & Policy Enforcement — sits between Azure AD and your applications.' },
+      { type: 'bullet', text: 'OIDC / OAuth 2.0: Federation protocol connecting Azure AD to Keycloak via token exchange.' },
+      { type: 'bullet', text: 'RBAC: Role-Based Access Control — users assigned roles that determine permitted actions.' },
+      { type: 'bullet', text: 'Cell-Level Security: Fine-grained data access control based on user attributes.' },
+      { type: 'bullet', text: 'SSO: Single Sign-On — authenticate once, access all connected applications.' },
+      { type: 'h3', text: 'Authentication Flow' },
+      { type: 'number', text: 'User visits your application — app detects no session and redirects to Keycloak.' },
+      { type: 'number', text: 'Keycloak presents login options — user sees "Sign in with Microsoft Azure AD."' },
+      { type: 'number', text: 'Redirect to Azure AD — Keycloak initiates OIDC Authorization Code flow.' },
+      { type: 'number', text: 'User authenticates at Azure AD — enters credentials (and MFA if configured).' },
+      { type: 'number', text: 'Azure AD returns authorization code — redirects back to Keycloak broker endpoint.' },
+      { type: 'number', text: 'Keycloak exchanges code for tokens — calls Azure AD token endpoint with code + secret.' },
+      { type: 'number', text: 'Keycloak processes claims and maps roles — extracts groups, assigns Keycloak roles.' },
+      { type: 'number', text: 'Keycloak creates session & tokens — issues JWT with roles, department, custom claims.' },
+      { type: 'number', text: 'Application enforces RBAC & cell-level security — reads JWT, grants/denies access.' },
+      { type: 'p', text: 'Key concept: Keycloak acts as a broker — it federates identity from Azure AD but maintains its own sessions and tokens. This decouples your applications from any single identity provider.' },
+    ]
+  },
+  {
+    id: 'phase1',
+    title: 'Phase 1: Azure AD (Entra ID) Setup',
+    content: [
+      { type: 'h3', text: 'Step 1: Create Azure AD Tenant' },
+      { type: 'p', text: 'Navigate to portal.azure.com. Your Azure AD tenant is your organization\'s dedicated instance where all users, groups, and apps reside. Go to Azure Active Directory → Overview and note your Tenant ID and Primary Domain (e.g., yourcompany.onmicrosoft.com).' },
+      { type: 'h3', text: 'Step 2: Create Users and Groups' },
+      { type: 'p', text: 'Groups are the foundation of RBAC. Create groups that mirror organizational roles:' },
+      { type: 'bullet', text: 'Admin-FullAccess — Full system access' },
+      { type: 'bullet', text: 'Manager-ReadWrite — Read/write to specific data cells' },
+      { type: 'bullet', text: 'User-ReadOnly — Read-only access' },
+      { type: 'bullet', text: 'Finance-Department — Cell-level access to finance data' },
+      { type: 'bullet', text: 'HR-Department — Cell-level access to HR data' },
+      { type: 'h3', text: 'Step 3: Register Application in Azure AD' },
+      { type: 'p', text: 'Go to App Registrations → New Registration. Name: Keycloak-Federation. Set supported account types to "Accounts in this organizational directory only." Set Redirect URI to: http://localhost:8080/realms/master/broker/azuread/endpoint. Capture the Application (client) ID and Directory (tenant) ID.' },
+      { type: 'h3', text: 'Step 4: Create Client Secret' },
+      { type: 'p', text: 'Go to Certificates & Secrets → New Client Secret. Set description to Keycloak-Secret with 24-month expiry. IMPORTANT: Copy the secret VALUE immediately — you cannot retrieve it later.' },
+      { type: 'h3', text: 'Step 5: Configure API Permissions' },
+      { type: 'p', text: 'Add Microsoft Graph delegated permissions: openid, profile, email, User.Read, GroupMember.Read.All. Then click "Grant admin consent for [Your Organization]."' },
+      { type: 'h3', text: 'Step 6: Configure Token Claims' },
+      { type: 'p', text: 'Add optional claims (email, family_name, given_name) to the ID token. Add groups claim selecting Security groups with Group ID format.' },
+      { type: 'h3', text: 'Deep Dive: Azure AD Concepts' },
+      { type: 'p', text: 'Tenant: A dedicated, isolated instance of Azure AD. Every user, group, and app registration lives within a specific tenant identified by a GUID.' },
+      { type: 'p', text: 'App Registration defines identity configuration (client ID, secrets, redirect URIs). Enterprise Application controls who can use the app and sign-in policies.' },
+      { type: 'p', text: 'Delegated permissions act on behalf of a signed-in user. Application permissions are for background services. For Keycloak federation, use delegated permissions.' },
+      { type: 'p', text: 'Group claims in tokens avoid extra API calls to Microsoft Graph during login. Keycloak receives group memberships directly and maps them to roles immediately.' },
+    ]
+  },
+  {
+    id: 'phase2',
+    title: 'Phase 2: Keycloak Installation & Setup',
+    content: [
+      { type: 'h3', text: 'Step 7: Install Keycloak' },
+      { type: 'p', text: 'Download Keycloak from GitHub releases. Extract, set KEYCLOAK_ADMIN and KEYCLOAK_ADMIN_PASSWORD environment variables. Start with ./bin/kc.sh start-dev for development mode. Access admin console at http://localhost:8080.' },
+      { type: 'code', text: 'wget https://github.com/keycloak/keycloak/releases/download/23.0.0/keycloak-23.0.0.zip\nunzip keycloak-23.0.0.zip && cd keycloak-23.0.0\nexport KEYCLOAK_ADMIN=admin\nexport KEYCLOAK_ADMIN_PASSWORD=admin123!\n./bin/kc.sh start-dev' },
+      { type: 'h3', text: 'Step 8: Create Keycloak Realm' },
+      { type: 'p', text: 'Create realm named "enterprise-apps". Set User Profile Enabled: ON, User Registration: OFF (users come from Azure AD), Remember Me: ON.' },
+      { type: 'h3', text: 'Deep Dive: Keycloak Concepts' },
+      { type: 'p', text: 'Realms are isolated tenants — completely separate user pools, roles, and groups. The "master" realm is for admin; create separate realms per application.' },
+      { type: 'p', text: 'Dev mode uses embedded H2 database with no HTTPS. Production mode requires external PostgreSQL, TLS certificates, and hostname configuration.' },
+      { type: 'p', text: 'As a broker, Keycloak delegates authentication to external IdPs while managing its own sessions and tokens. Your apps only talk to Keycloak, never directly to Azure AD.' },
+    ]
+  },
+  {
+    id: 'phase3',
+    title: 'Phase 3: Federation Configuration',
+    content: [
+      { type: 'h3', text: 'Step 9: Add Azure AD as Identity Provider' },
+      { type: 'p', text: 'In Keycloak, add OpenID Connect v1.0 identity provider with alias "azuread". Set Discovery Endpoint to: https://login.microsoftonline.com/{TENANT_ID}/v2.0/.well-known/openid-configuration. Provide Client ID and Secret. Set Default Scopes: openid profile email.' },
+      { type: 'p', text: 'Configure mappers: email (from email claim), firstName (from given_name), lastName (from family_name), azure-groups (from groups claim).' },
+      { type: 'h3', text: 'Step 10: Update Azure AD Redirect URI' },
+      { type: 'p', text: 'Copy Keycloak\'s broker redirect URI and add it to Azure AD App Registration → Authentication → Redirect URIs. Example: http://localhost:8080/realms/enterprise-apps/broker/azuread/endpoint.' },
+      { type: 'h3', text: 'Deep Dive: OIDC & Federation' },
+      { type: 'p', text: 'The .well-known/openid-configuration endpoint returns a JSON document with all endpoints, supported scopes, claims, and signing algorithms. Keycloak reads this once during setup.' },
+      { type: 'p', text: 'Mappers translate between Azure AD claim names and Keycloak attribute names. Without proper mappers, user profiles would be incomplete and group-to-role mapping won\'t work.' },
+      { type: 'p', text: 'Sync Mode IMPORT creates users on first login only. FORCE updates attributes on every login. Use FORCE for groups and department to keep them in sync.' },
+    ]
+  },
+  {
+    id: 'phase4',
+    title: 'Phase 4: RBAC Setup',
+    content: [
+      { type: 'h3', text: 'Step 11: Create Keycloak Roles' },
+      { type: 'p', text: 'Create realm roles: admin, manager, user, finance-analyst, hr-specialist. Create composite roles where manager inherits employee, director inherits manager, etc.' },
+      { type: 'code', text: 'admin (full access)\n  └── executive\n      └── director\n          └── manager\n              └── employee (base level)' },
+      { type: 'h3', text: 'Step 12: Map Azure AD Groups to Keycloak Roles' },
+      { type: 'p', text: 'Use Advanced Claim to Role mappers. For each Azure AD group, map the Group Object ID to a Keycloak role. Example: Admin-FullAccess group → admin role, Manager-ReadWrite → manager role.' },
+      { type: 'h3', text: 'Role Composition Detail' },
+      { type: 'bullet', text: 'Employee: document:read, document:create, profile:read-own, profile:update-own, access-public, access-internal' },
+      { type: 'bullet', text: 'Manager: employee + document:update, document:share, profile:read-team, access-confidential' },
+      { type: 'bullet', text: 'Director: manager + document:delete, profile:read-dept, access-restricted, admin:audit-logs' },
+      { type: 'bullet', text: 'Executive: director + profile:read-all, access-top-secret, admin:user-management' },
+    ]
+  },
+  {
+    id: 'phase5',
+    title: 'Phase 5: App Integration & Cell-Level Security',
+    content: [
+      { type: 'h3', text: 'Step 13: Create Keycloak Client' },
+      { type: 'p', text: 'Create client "my-application" with OpenID Connect type. Enable Client Authentication, Authorization, Standard Flow, and Direct Access Grants. Set Root URL, Valid Redirect URIs, and Web Origins to your application.' },
+      { type: 'h3', text: 'Step 14: Configure Client Scopes for RBAC' },
+      { type: 'p', text: 'Create custom client scope "roles" with User Realm Role mapper. Set Token Claim Name to realm_access.roles. Add to ID token, access token, and userinfo.' },
+      { type: 'h3', text: 'Step 15: Cell-Level Security' },
+      { type: 'p', text: 'Approach 1: User Attributes — add department, region, data_classification attributes to users. Map into access tokens via client scope mappers.' },
+      { type: 'p', text: 'Approach 2: Authorization Services — define Resources, Scopes, Policies, and Permissions in Keycloak. Policies can be role-based, JavaScript-based, or time-based.' },
+      { type: 'p', text: 'Data Classification Levels: Public (everyone), Internal (employees), Confidential (managers+), Restricted (directors+), Top-Secret (executives only).' },
+      { type: 'p', text: 'PostgreSQL Row-Level Security: Use ALTER TABLE ... ENABLE ROW LEVEL SECURITY with policies that filter rows based on session variables set from the JWT token.' },
+    ]
+  },
+  {
+    id: 'phase6',
+    title: 'Phase 6: Single Sign-On (SSO)',
+    content: [
+      { type: 'h3', text: 'Step 16: Configure SSO Session Settings' },
+      { type: 'p', text: 'SSO Session Idle: 30 minutes. SSO Session Max: 10 hours. Remember Me Idle: 7 days. Remember Me Max: 30 days.' },
+      { type: 'p', text: 'Token Lifespans: Access Token: 5 minutes. Implicit Flow: 15 minutes. Client Login Timeout: 1 minute.' },
+      { type: 'h3', text: 'Step 17: Test SSO Flow' },
+      { type: 'p', text: 'Navigate to Keycloak account console. Click "Microsoft Azure AD." Should redirect to Azure AD, then back to Keycloak. Verify user attributes, role mappings, and token contents.' },
+      { type: 'p', text: 'Use jwt.io to decode the access token and verify it contains user info, roles in realm_access.roles, and custom attributes.' },
+      { type: 'h3', text: 'How SSO Works' },
+      { type: 'p', text: 'When a user logs into App A, Keycloak creates a session cookie. When visiting App B, Keycloak sees the existing session and immediately issues new tokens — no login prompt.' },
+      { type: 'p', text: 'Short access token lifespans (5 min) limit damage from leaked tokens. Refresh tokens allow seamless re-authentication behind the scenes.' },
+    ]
+  },
+  {
+    id: 'phase7-9',
+    title: 'Phases 7-9: Implementation, Advanced Security & Monitoring',
+    content: [
+      { type: 'h3', text: 'Phase 7: Application Implementation (Node.js)' },
+      { type: 'p', text: 'Use keycloak-connect middleware for Express.js. keycloak.protect() checks authentication. keycloak.protect("admin") verifies realm role.' },
+      { type: 'code', text: 'app.get("/secure", keycloak.protect(), handler);\napp.get("/admin", keycloak.protect("admin"), handler);\napp.get("/api/finance", keycloak.protect(), (req, res) => {\n  const token = req.kauth.grant.access_token.content;\n  if (token.realm_access.roles.includes("finance-analyst")\n      || token.department === "finance") {\n    // Grant access\n  }\n});' },
+      { type: 'h3', text: 'Phase 8: PostgreSQL Row-Level Security' },
+      { type: 'code', text: 'ALTER TABLE financial_records ENABLE ROW LEVEL SECURITY;\n\nCREATE POLICY department_isolation ON financial_records\n  USING (department = current_setting(\'app.user_department\'));\n\n-- In app: set from JWT before queries\nawait db.query("SET app.user_department = $1", [token.department]);' },
+      { type: 'h3', text: 'Phase 9: Monitoring & Troubleshooting' },
+      { type: 'p', text: 'Enable Keycloak event logging: Realm Settings → Events → Save Login Events and Admin Events.' },
+      { type: 'p', text: 'Common issues: Redirect URI mismatch (check exact match), expired client secret, missing admin consent, group claims not configured, missing client scope role mappers.' },
+    ]
+  },
+  {
+    id: 'security-checklist',
+    title: 'Security Best Practices & Testing Checklist',
+    content: [
+      { type: 'h3', text: 'Security Best Practices' },
+      { type: 'bullet', text: 'Use HTTPS everywhere — never HTTP for identity flows in production.' },
+      { type: 'bullet', text: 'Secure client secrets — store in environment variables or secrets managers. Rotate regularly.' },
+      { type: 'bullet', text: 'Validate JWT tokens — verify signatures, expiration, issuer, and audience claims.' },
+      { type: 'bullet', text: 'Short token lifespans — access tokens 5-15 minutes. Use refresh tokens for extended sessions.' },
+      { type: 'bullet', text: 'Enable MFA in Azure AD — required for admin accounts.' },
+      { type: 'bullet', text: 'Regular audits — review access logs monthly. Audit role assignments. Principle of least privilege.' },
+      { type: 'h3', text: 'Testing Checklist' },
+      { type: 'number', text: 'Azure AD user can log into Keycloak via SSO' },
+      { type: 'number', text: 'User attributes sync correctly (email, name, groups)' },
+      { type: 'number', text: 'Azure AD groups map to correct Keycloak roles' },
+      { type: 'number', text: 'Access tokens contain correct roles in realm_access.roles' },
+      { type: 'number', text: 'Application enforces role-based access correctly' },
+      { type: 'number', text: 'Cell-level security filters data by department' },
+      { type: 'number', text: 'SSO works across multiple applications' },
+      { type: 'number', text: 'Logout works properly (both Keycloak and Azure AD)' },
+      { type: 'number', text: 'Token refresh works seamlessly' },
+      { type: 'number', text: 'Events are logged for audit trail' },
+    ]
+  },
+  {
+    id: 'access-matrix',
+    title: 'Access Control Matrix',
+    content: [
+      { type: 'p', text: 'Summary of permissions by role across the document repository system:' },
+      { type: 'table', headers: ['Role', 'Create', 'Read Own', 'Public', 'Team', 'Dept', 'All', 'Edit Own', 'Edit Team', 'Delete', 'Share', 'Audit'],
+        rows: [
+          ['Employee',  '✓', '✓', '✓', '✗', '~', '✗', '✓', '✗', '✓', '✗', '✗'],
+          ['Manager',   '✓', '✓', '✓', '✓', '✓', '✗', '✓', '✓', '~', '✓', '✗'],
+          ['Director',  '✓', '✓', '✓', '✓', '✓', '✓', '✓', '✓', '✓', '✓', '✓'],
+          ['Executive', '✓', '✓', '✓', '✓', '✓', '✓', '✓', '✓', '✓', '✓', '✓'],
+        ]
+      },
+      { type: 'p', text: '~ = Limited by classification level and department membership' },
+    ]
+  },
+  {
+    id: 'database-schema',
+    title: 'Database Schema',
+    content: [
+      { type: 'p', text: 'PostgreSQL schema for the document repository system with RBAC and cell-level security.' },
+      { type: 'code', text: 'CREATE TABLE documents (\n  id SERIAL PRIMARY KEY,\n  title VARCHAR(255) NOT NULL,\n  content TEXT,\n  owner_id VARCHAR(255) NOT NULL,\n  owner_email VARCHAR(255) NOT NULL,\n  department VARCHAR(100),\n  classification VARCHAR(50) DEFAULT \'internal\',\n  is_public BOOLEAN DEFAULT false,\n  deleted BOOLEAN DEFAULT false,\n  created_at TIMESTAMP DEFAULT NOW(),\n  updated_at TIMESTAMP DEFAULT NOW()\n);' },
+      { type: 'code', text: 'CREATE TABLE document_shares (\n  id SERIAL PRIMARY KEY,\n  document_id INTEGER REFERENCES documents(id),\n  shared_by VARCHAR(255) NOT NULL,\n  shared_with_email VARCHAR(255) NOT NULL,\n  permissions JSONB,\n  created_at TIMESTAMP DEFAULT NOW()\n);' },
+      { type: 'code', text: 'CREATE TABLE document_audit_log (\n  id SERIAL PRIMARY KEY,\n  document_id INTEGER REFERENCES documents(id),\n  action VARCHAR(50) NOT NULL,\n  user_id VARCHAR(255) NOT NULL,\n  user_email VARCHAR(255) NOT NULL,\n  timestamp TIMESTAMP DEFAULT NOW(),\n  details JSONB\n);' },
+      { type: 'code', text: 'CREATE TABLE user_profiles (\n  user_id VARCHAR(255) PRIMARY KEY,\n  preferences JSONB,\n  bio TEXT,\n  created_at TIMESTAMP DEFAULT NOW(),\n  updated_at TIMESTAMP DEFAULT NOW()\n);' },
+    ]
+  }
+];
+
+// Build docx content from section data
+function buildDocxParagraphs(sections, numbering) {
+  const paras = [];
+  const border = { style: BorderStyle.SINGLE, size: 1, color: 'BBBBBB' };
+  const borders = { top: border, bottom: border, left: border, right: border };
+
+  sections.forEach((sec, si) => {
+    if (si > 0) paras.push(new Paragraph({ children: [new PageBreak()] }));
+
+    paras.push(new Paragraph({
+      heading: HeadingLevel.HEADING_1,
+      spacing: { after: 200 },
+      children: [new TextRun({ text: sec.title, bold: true, size: 32, font: 'Arial' })]
+    }));
+
+    sec.content.forEach(item => {
+      if (item.type === 'h3') {
+        paras.push(new Paragraph({
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: 240, after: 120 },
+          children: [new TextRun({ text: item.text, bold: true, size: 26, font: 'Arial' })]
+        }));
+      } else if (item.type === 'p') {
+        paras.push(new Paragraph({
+          spacing: { after: 160 },
+          children: [new TextRun({ text: item.text, size: 22, font: 'Arial' })]
+        }));
+      } else if (item.type === 'bullet') {
+        paras.push(new Paragraph({
+          numbering: { reference: 'bullets', level: 0 },
+          spacing: { after: 80 },
+          children: [new TextRun({ text: item.text, size: 22, font: 'Arial' })]
+        }));
+      } else if (item.type === 'number') {
+        paras.push(new Paragraph({
+          numbering: { reference: 'numbers', level: 0 },
+          spacing: { after: 80 },
+          children: [new TextRun({ text: item.text, size: 22, font: 'Arial' })]
+        }));
+      } else if (item.type === 'code') {
+        paras.push(new Paragraph({
+          spacing: { before: 120, after: 120 },
+          shading: { fill: 'F1F5F9', type: ShadingType.CLEAR },
+          indent: { left: 360, right: 360 },
+          children: item.text.split('\n').flatMap((line, i, arr) => {
+            const runs = [new TextRun({ text: line, font: 'Courier New', size: 18 })];
+            if (i < arr.length - 1) runs.push(new TextRun({ break: 1 }));
+            return runs;
+          })
+        }));
+      } else if (item.type === 'table') {
+        const headerRow = new TableRow({
+          tableHeader: true,
+          children: item.headers.map(h => new TableCell({
+            borders,
+            shading: { fill: '1E6B71', type: ShadingType.CLEAR },
+            margins: { top: 60, bottom: 60, left: 80, right: 80 },
+            width: { size: Math.floor(9360 / item.headers.length), type: WidthType.DXA },
+            children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: h, bold: true, size: 18, font: 'Arial', color: 'FFFFFF' })] })]
+          }))
+        });
+        const dataRows = item.rows.map(row => new TableRow({
+          children: row.map((cell, ci) => new TableCell({
+            borders,
+            margins: { top: 40, bottom: 40, left: 80, right: 80 },
+            width: { size: Math.floor(9360 / item.headers.length), type: WidthType.DXA },
+            children: [new Paragraph({
+              alignment: ci > 0 ? AlignmentType.CENTER : AlignmentType.LEFT,
+              children: [new TextRun({ text: cell, size: 18, font: 'Arial' })]
+            })]
+          }))
+        }));
+        paras.push(new Table({
+          width: { size: 100, type: WidthType.PERCENTAGE },
+          columnWidths: Array(item.headers.length).fill(Math.floor(9360 / item.headers.length)),
+          rows: [headerRow, ...dataRows]
+        }));
+      }
+    });
+  });
+  return paras;
+}
+
+function createDocxDocument(sections) {
+  return new Document({
+    styles: {
+      default: { document: { run: { font: 'Arial', size: 22 } } },
+      paragraphStyles: [
+        { id: 'Heading1', name: 'Heading 1', basedOn: 'Normal', next: 'Normal', quickFormat: true,
+          run: { size: 32, bold: true, font: 'Arial', color: '1E6B71' },
+          paragraph: { spacing: { before: 240, after: 200 }, outlineLevel: 0 } },
+        { id: 'Heading2', name: 'Heading 2', basedOn: 'Normal', next: 'Normal', quickFormat: true,
+          run: { size: 26, bold: true, font: 'Arial', color: '334155' },
+          paragraph: { spacing: { before: 180, after: 120 }, outlineLevel: 1 } },
+      ]
+    },
+    numbering: {
+      config: [
+        { reference: 'bullets', levels: [{ level: 0, format: LevelFormat.BULLET, text: '\u2022', alignment: AlignmentType.LEFT,
+          style: { paragraph: { indent: { left: 720, hanging: 360 } } } }] },
+        { reference: 'numbers', levels: [{ level: 0, format: LevelFormat.DECIMAL, text: '%1.', alignment: AlignmentType.LEFT,
+          style: { paragraph: { indent: { left: 720, hanging: 360 } } } }] },
+      ]
+    },
+    sections: [{
+      properties: {
+        page: {
+          size: { width: 12240, height: 15840 },
+          margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 }
+        }
+      },
+      headers: {
+        default: new Header({ children: [new Paragraph({
+          alignment: AlignmentType.RIGHT,
+          children: [new TextRun({ text: 'Azure AD + Keycloak Federation Guide', size: 16, font: 'Arial', color: '94A3B8', italics: true })]
+        })] })
+      },
+      footers: {
+        default: new Footer({ children: [new Paragraph({
+          alignment: AlignmentType.CENTER,
+          children: [new TextRun({ text: 'Page ', size: 16, font: 'Arial', color: '94A3B8' }), new TextRun({ children: [PageNumber.CURRENT], size: 16, font: 'Arial', color: '94A3B8' })]
+        })] })
+      },
+      children: buildDocxParagraphs(sections, null)
+    }]
+  });
+}
+
+async function downloadAll(btn, bySections) {
+  btn.classList.add('loading');
+  try {
+    if (bySections) {
+      // Download each section as a separate file
+      for (const sec of sectionData) {
+        const doc = createDocxDocument([sec]);
+        const blob = await Packer.toBlob(doc);
+        const safeName = sec.title.replace(/[^a-zA-Z0-9]+/g, '_').replace(/_+/g, '_');
+        saveAs(blob, `${safeName}.docx`);
+        await new Promise(r => setTimeout(r, 400)); // stagger downloads
+      }
+    } else {
+      // Download all as one document
+      const doc = createDocxDocument(sectionData);
+      const blob = await Packer.toBlob(doc);
+      saveAs(blob, 'Azure_AD_Keycloak_Federation_Complete_Guide.docx');
+    }
+  } catch (err) {
+    console.error('Download error:', err);
+    alert('Download failed. Please try again.');
+  }
+  btn.classList.remove('loading');
+}
+
+// Inject per-section download buttons into each section card header
+document.querySelectorAll('.section-card').forEach(card => {
+  const h2 = card.querySelector('h2');
+  if (!h2) return;
+  const sectionEl = card.closest('section');
+  if (!sectionEl || !sectionEl.id) return;
+
+  // Find matching section data
+  const matchId = sectionEl.id;
+  let matchedSections = sectionData.filter(s => s.id === matchId);
+  if (!matchedSections.length) {
+    // Try partial match for combined sections
+    matchedSections = sectionData.filter(s => matchId.includes(s.id.split('-')[0]));
+  }
+  if (!matchedSections.length) return;
+
+  const headerDiv = h2.parentElement;
+  const dlBtn = document.createElement('button');
+  dlBtn.className = 'dl-btn dl-btn-section ml-auto shrink-0';
+  dlBtn.title = 'Download this section as .docx';
+  dlBtn.innerHTML = `<div class="dl-spinner"></div><svg class="dl-icon w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg><span class="hidden sm:inline">.docx</span>`;
+  dlBtn.onclick = async function() {
+    this.classList.add('loading');
+    try {
+      const doc = createDocxDocument(matchedSections);
+      const blob = await Packer.toBlob(doc);
+      const name = matchedSections[0].title.replace(/[^a-zA-Z0-9]+/g, '_');
+      saveAs(blob, `${name}.docx`);
+    } catch(e) { console.error(e); }
+    this.classList.remove('loading');
+  };
+
+  // Make the header row a flex container and append button
+  const wrapper = headerDiv.closest('.flex');
+  if (wrapper) {
+    wrapper.style.flexWrap = 'wrap';
+    wrapper.appendChild(dlBtn);
+  }
+});
 </script>
 </body>
 </html>
