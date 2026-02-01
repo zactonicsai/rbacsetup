@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Azure AD + Keycloak Federation — Complete Guide</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['Outfit', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+            accent: ['Space Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eefbfa',
+              100: '#d5f5f3',
+              200: '#b0eae8',
+              300: '#7ad9d8',
+              400: '#44c0c2',
+              500: '#28a5a8',
+              600: '#1f858b',
+              700: '#1e6b71',
+              800: '#1e565c',
+              900: '#1d484e',
+              950: '#0c2d33',
+            },
+            surface: {
+              50: '#f8f9fb',
+              100: '#f0f1f5',
+              200: '#e4e6ed',
+              700: '#1e2230',
+              800: '#151824',
+              900: '#0e1019',
+              950: '#080a10',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* === CUSTOM STYLES === */
+    * { box-sizing: border-box; }
+    body { font-family: 'Outfit', sans-serif; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #28a5a8; border-radius: 100px; }
+
+    /* Progress bar at top */
+    #progress-bar {
+      position: fixed; top: 0; left: 0; height: 3px; z-index: 9999;
+      background: linear-gradient(90deg, #28a5a8, #44c0c2, #7ad9d8);
+      transition: width 0.15s ease-out;
+    }
+
+    /* Code blocks */
+    .code-block {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.7;
+      tab-size: 2;
+    }
+
+    /* Deep dive sections */
+    .deep-dive-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+      opacity: 0;
+    }
+    .deep-dive-content.expanded {
+      max-height: 8000px;
+      opacity: 1;
+    }
+
+    /* TOC active state */
+    .toc-link.active {
+      color: #28a5a8;
+      border-left-color: #28a5a8;
+      background: rgba(40, 165, 168, 0.08);
+    }
+    .dark .toc-link.active {
+      background: rgba(40, 165, 168, 0.12);
+    }
+
+    /* Animated background pattern */
+    .hero-pattern {
+      background-image: 
+        radial-gradient(circle at 20% 50%, rgba(40, 165, 168, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(68, 192, 194, 0.06) 0%, transparent 50%),
+        radial-gradient(circle at 60% 80%, rgba(122, 217, 216, 0.05) 0%, transparent 50%);
+    }
+    .dark .hero-pattern {
+      background-image: 
+        radial-gradient(circle at 20% 50%, rgba(40, 165, 168, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(68, 192, 194, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 60% 80%, rgba(122, 217, 216, 0.08) 0%, transparent 50%);
+    }
+
+    /* Phase badge pulse */
+    @keyframes badge-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(40, 165, 168, 0.3); }
+      50% { box-shadow: 0 0 0 6px rgba(40, 165, 168, 0); }
+    }
+    .phase-badge { animation: badge-pulse 3s infinite; }
+
+    /* Fade-in on scroll */
+    .fade-section {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .fade-section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Architecture diagram node animation */
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+    .arch-node { animation: float 4s ease-in-out infinite; }
+    .arch-node:nth-child(2) { animation-delay: 0.8s; }
+    .arch-node:nth-child(3) { animation-delay: 1.6s; }
+
+    /* Button glow on hover */
+    .btn-glow:hover {
+      box-shadow: 0 0 20px rgba(40, 165, 168, 0.35);
+    }
+
+    /* Checklist items */
+    .check-item input:checked + span {
+      text-decoration: line-through;
+      opacity: 0.5;
+    }
+
+    /* Access matrix table */
+    .access-matrix td, .access-matrix th {
+      padding: 8px 10px;
+      text-align: center;
+      font-size: 0.78rem;
+    }
+
+    /* Smooth section reveal */
+    .section-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .section-card:hover {
+      transform: translateY(-2px);
+    }
+
+    /* Mobile TOC */
+    #mobile-toc {
+      transform: translateX(-100%);
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #mobile-toc.open { transform: translateX(0); }
+  </style>
+</head>
+<body class="bg-surface-50 text-surface-900 dark:bg-surface-950 dark:text-surface-100 transition-colors duration-300">
+
+<!-- Progress Bar -->
+<div id="progress-bar" style="width: 0%"></div>
+
+<!-- ===== NAVBAR ===== -->
+<nav class="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-white/80 dark:bg-surface-950/80 border-b border-surface-200/60 dark:border-surface-700/40">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
+    <div class="flex items-center gap-3">
+      <!-- Mobile menu button -->
+      <button id="mobile-menu-btn" class="lg:hidden p-2 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800 transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+        </div>
+        <span class="font-display font-bold text-lg hidden sm:block">Federation<span class="text-brand-500">Guide</span></span>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="hidden md:inline text-xs font-mono text-surface-500 dark:text-surface-400 bg-surface-100 dark:bg-surface-800 px-2.5 py-1 rounded-full">v1.0</span>
+      <!-- Theme toggle -->
+      <button id="theme-toggle" class="relative w-14 h-7 rounded-full bg-surface-200 dark:bg-surface-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-surface-900" aria-label="Toggle dark mode">
+        <div id="theme-knob" class="absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform duration-300 flex items-center justify-center">
+          <svg id="sun-icon" class="w-3.5 h-3.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"/></svg>
+          <svg id="moon-icon" class="w-3.5 h-3.5 text-indigo-400 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
+        </div>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- ===== MOBILE TOC OVERLAY ===== -->
+<div id="mobile-toc-overlay" class="fixed inset-0 bg-black/40 z-40 hidden lg:hidden" onclick="closeMobileToc()"></div>
+<aside id="mobile-toc" class="fixed top-0 left-0 bottom-0 w-72 z-50 bg-white dark:bg-surface-900 shadow-2xl overflow-y-auto p-6 pt-20 lg:hidden">
+  <div id="mobile-toc-links"></div>
+</aside>
+
+<!-- ===== HERO ===== -->
+<header class="hero-pattern pt-28 pb-16 md:pt-36 md:pb-24 relative overflow-hidden">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 text-center relative z-10">
+    <div class="inline-flex items-center gap-2 text-xs font-accent uppercase tracking-widest text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/50 border border-brand-200 dark:border-brand-800 px-4 py-1.5 rounded-full mb-6">
+      <span class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></span>
+      Complete Implementation Guide
+    </div>
+    <h1 class="font-display font-900 text-4xl sm:text-5xl md:text-6xl leading-tight tracking-tight mb-6">
+      Azure AD <span class="text-brand-500">&</span> Keycloak<br class="hidden sm:block" />
+      <span class="bg-gradient-to-r from-brand-500 via-brand-400 to-brand-600 bg-clip-text text-transparent">Federation with RBAC & SSO</span>
+    </h1>
+    <p class="text-lg md:text-xl text-surface-600 dark:text-surface-300 max-w-2xl mx-auto leading-relaxed font-light">
+      Enterprise identity management from zero to production. Azure AD as your IdP, Keycloak as your broker, with role-based access control and cell-level security.
+    </p>
+
+    <!-- Architecture Overview Diagram -->
+    <div class="mt-12 flex flex-wrap justify-center items-center gap-4 md:gap-6">
+      <div class="arch-node bg-white dark:bg-surface-800 border-2 border-blue-400 dark:border-blue-500 rounded-xl px-5 py-3 shadow-lg shadow-blue-500/10">
+        <div class="text-[0.65rem] uppercase tracking-wider text-blue-500 font-accent mb-0.5">IdP</div>
+        <div class="font-display font-bold text-sm">Azure AD</div>
+      </div>
+      <svg class="w-8 h-8 text-surface-400 dark:text-surface-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+      <div class="arch-node bg-white dark:bg-surface-800 border-2 border-brand-400 dark:border-brand-500 rounded-xl px-5 py-3 shadow-lg shadow-brand-500/10">
+        <div class="text-[0.65rem] uppercase tracking-wider text-brand-500 font-accent mb-0.5">Broker</div>
+        <div class="font-display font-bold text-sm">Keycloak</div>
+      </div>
+      <svg class="w-8 h-8 text-surface-400 dark:text-surface-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+      <div class="arch-node bg-white dark:bg-surface-800 border-2 border-emerald-400 dark:border-emerald-500 rounded-xl px-5 py-3 shadow-lg shadow-emerald-500/10">
+        <div class="text-[0.65rem] uppercase tracking-wider text-emerald-500 font-accent mb-0.5">Apps</div>
+        <div class="font-display font-bold text-sm">Your Services</div>
+      </div>
+    </div>
+
+    <!-- Quick stat pills -->
+    <div class="mt-10 flex flex-wrap justify-center gap-3 text-xs font-mono">
+      <span class="bg-surface-100 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 px-3 py-1.5 rounded-full">9 Phases</span>
+      <span class="bg-surface-100 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 px-3 py-1.5 rounded-full">20 Steps</span>
+      <span class="bg-surface-100 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 px-3 py-1.5 rounded-full">OIDC/OAuth2</span>
+      <span class="bg-surface-100 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 px-3 py-1.5 rounded-full">RBAC</span>
+      <span class="bg-surface-100 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 px-3 py-1.5 rounded-full">Cell-Level Security</span>
+    </div>
+  </div>
+</header>
+
+<!-- ===== MAIN LAYOUT ===== -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 pb-24">
+  <div class="flex gap-8">
+
+    <!-- SIDEBAR TOC (desktop) -->
+    <aside id="desktop-toc" class="hidden lg:block w-64 shrink-0">
+      <div class="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pr-2 pb-8">
+        <div class="text-[0.65rem] font-accent uppercase tracking-widest text-surface-400 dark:text-surface-500 mb-3 pl-3">Contents</div>
+        <nav id="toc-nav" class="flex flex-col gap-0.5">
+          <!-- JS will populate -->
+        </nav>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 min-w-0">
+
+      <!-- =============== SECTION: ARCHITECTURE OVERVIEW =============== -->
+      <section id="architecture" class="fade-section mb-16">
+        <div class="section-card bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/50 rounded-2xl p-6 md:p-10 shadow-sm">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white text-lg">🏗</div>
+            <div>
+              <h2 class="font-display font-800 text-2xl md:text-3xl">Architecture Overview</h2>
+              <p class="text-sm text-surface-500 dark:text-surface-400 font-mono">The big picture</p>
+            </div>
+          </div>
+          <p class="text-surface-600 dark:text-surface-300 leading-relaxed mb-6">
+            This guide walks you through building an enterprise-grade identity and access management system. The architecture connects Microsoft's cloud identity platform with an open-source access management broker, giving you fine-grained control over who can access what in your applications.
+          </p>
+
+          <!-- Component cards -->
+          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            <div class="bg-surface-50 dark:bg-surface-900/60 border border-surface-200 dark:border-surface-700/40 rounded-xl p-4">
+              <div class="text-blue-500 text-lg mb-2">☁️</div>
+              <h3 class="font-display font-bold text-sm mb-1">Azure AD (Entra ID)</h3>
+              <p class="text-xs text-surface-500 dark:text-surface-400 leading-relaxed">Primary Identity Provider — authenticates users against Microsoft's cloud directory. Stores user accounts, group memberships, and organizational data.</p>
+            </div>
+            <div class="bg-surface-50 dark:bg-surface-900/60 border border-surface-200 dark:border-surface-700/40 rounded-xl p-4">
+              <div class="text-brand-500 text-lg mb-2">🔑</div>
+              <h3 class="font-display font-bold text-sm mb-1">Keycloak</h3>
+              <p class="text-xs text-surface-500 dark:text-surface-400 leading-relaxed">Identity Broker & Policy Enforcement — sits between Azure AD and your applications. Manages sessions, maps roles, and enforces fine-grained authorization.</p>
+            </div>
+            <div class="bg-surface-50 dark:bg-surface-900/60 border border-surface-200 dark:border-surface-700/40 rounded-xl p-4">
+              <div class="text-amber-500 text-lg mb-2">🔄</div>
+              <h3 class="font-display font-bold text-sm mb-1">OIDC / OAuth 2.0</h3>
+              <p class="text-xs text-surface-500 dark:text-surface-400 leading-relaxed">Federation Protocol — the industry-standard protocol connecting Azure AD to Keycloak. Handles token exchange, scopes, and secure redirects.</p>
+            </div>
+            <div class="bg-surface-50 dark:bg-surface-900/60 border border-surface-200 dark:border-surface-700/40 rounded-xl p-4">
+              <div class="text-emerald-500 text-lg mb-2">🛡</div>
+              <h3 class="font-display font-bold text-sm mb-1">RBAC</h3>
+              <p class="text-xs text-surface-500 dark:text-surface-400 leading-relaxed">Role-Based Access Control — users are assigned roles (employee, manager, director, executive) that determine which actions they can perform.</p>
+            </div>
+            <div class="bg-surface-50 dark:bg-surface-900/60 border border-surface-200 dark:border-surface-700/40 rounded-xl p-4">
+              <div class="text-rose-500 text-lg mb-2">🔬</div>
+              <h3 class="font-display font-bold text-sm mb-1">Cell-Level Security</h3>
+              <p class="text-xs text-surface-500 dark:text-surface-400 leading-relaxed">Fine-grained data access control — restrict access to specific rows, documents, or data cells based on user attributes like department and clearance level.</p>
+            </div>
+            <div class="bg-surface-50 dark:bg-surface-900/60 border border-surface-200 dark:border-surface-700/40 rounded-xl p-4">
+              <div class="text-violet-500 text-lg mb-2">🔗</div>
+              <h3 class="font-display font-bold text-sm mb-1">SSO</h3>
+              <p class="text-xs text-surface-500 dark:text-surface-400 leading-relaxed">Single Sign-On — users authenticate once and gain access to all connected applications without re-entering credentials.</p>
+            </div>
+          </div>
+
+          <!-- Deep Dive Button -->
+          <button onclick="toggleDeepDive('arch-deep')" class="btn-glow inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white text-sm font-display font-600 px-5 py-2.5 rounded-xl transition-all duration-300">
+            <svg class="w-4 h-4 deep-arrow transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            Deep Dive: How the Flow Works
+          </button>
+          <div id="arch-deep" class="deep-dive-content mt-6">
+            <div class="bg-brand-50/50 dark:bg-brand-950/20 border border-brand-200 dark:border-brand-800/40 rounded-xl p-6">
+              <h4 class="font-display font-bold text-lg text-brand-700 dark:text-brand-300 mb-3">🔄 Authentication Flow Step-by-Step</h4>
+              <div class="space-y-3 text-sm text-surface-700 dark:text-surface-300 leading-relaxed">
+                <div class="flex gap-3"><span class="shrink-0 w-6 h-6 rounded-full bg-brand-500 text-white text-xs flex items-center justify-center font-bold">1</span><p><strong>User visits your application</strong> — The app detects no active session and redirects the user to Keycloak's login page.</p></div>
+                <div class="flex gap-3"><span class="shrink-0 w-6 h-6 rounded-full bg-brand-500 text-white text-xs flex items-center justify-center font-bold">2</span><p><strong>Keycloak presents login options</strong> — The user sees a "Sign in with Microsoft Azure AD" button (configured as an Identity Provider in Keycloak).</p></div>
+                <div class="flex gap-3"><span class="shrink-0 w-6 h-6 rounded-full bg-brand-500 text-white text-xs flex items-center justify-center font-bold">3</span><p><strong>Redirect to Azure AD</strong> — Keycloak initiates an OIDC Authorization Code flow, redirecting the browser to Microsoft's login page with a client_id and redirect_uri.</p></div>
+                <div class="flex gap-3"><span class="shrink-0 w-6 h-6 rounded-full bg-brand-500 text-white text-xs flex items-center justify-center font-bold">4</span><p><strong>User authenticates at Azure AD</strong> — The user enters their Microsoft credentials (and MFA if configured). Azure AD validates the credentials.</p></div>
+                <div class="flex gap-3"><span class="shrink-0 w-6 h-6 rounded-full bg-brand-500 text-white text-xs flex items-center justify-center font-bold">5</span><p><strong>Azure AD returns an authorization code</strong> — On success, Azure AD redirects back to Keycloak's broker endpoint with an authorization code.</p></div>
+                <div class="flex gap-3"><span class="shrink-0 w-6 h-6 rounded-full bg-brand-500 text-white text-xs flex items-center justify-center font-bold">6</span><p><strong>Keycloak exchanges the code for tokens</strong> — Keycloak calls Azure AD's token endpoint using the code + client_secret, receiving an ID token, access token, and refresh token.</p></div>
+                <div class="flex gap-3"><span class="shrink-0 w-6 h-6 rounded-full bg-brand-500 text-white text-xs flex items-center justify-center font-bold">7</span><p><strong>Keycloak processes claims and maps roles</strong> — The ID token contains claims (email, name, groups). Keycloak's mappers extract these, create/update the local user, and assign Keycloak roles based on Azure AD group memberships.</p></div>
+                <div class="flex gap-3"><span class="shrink-0 w-6 h-6 rounded-full bg-brand-500 text-white text-xs flex items-center justify-center font-bold">8</span><p><strong>Keycloak creates its own session & tokens</strong> — Keycloak issues its own JWT access token enriched with realm roles, department attributes, and custom claims. This token is what your application actually validates.</p></div>
+                <div class="flex gap-3"><span class="shrink-0 w-6 h-6 rounded-full bg-brand-500 text-white text-xs flex items-center justify-center font-bold">9</span><p><strong>Application enforces RBAC & cell-level security</strong> — Your app reads the JWT, checks the user's roles and attributes, and grants/denies access to resources accordingly.</p></div>
+              </div>
+              <div class="mt-5 p-4 bg-white/60 dark:bg-surface-900/40 rounded-lg border border-brand-200/50 dark:border-brand-800/30">
+                <p class="text-xs font-mono text-surface-500 dark:text-surface-400"><strong class="text-brand-600 dark:text-brand-400">Key concept:</strong> Keycloak acts as a <em>broker</em> — it federates identity from Azure AD but maintains its own sessions and tokens. This decouples your applications from any single identity provider, so you could add Google, Okta, or LDAP without changing application code.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =============== PHASE 1: AZURE AD SETUP =============== -->
+      <section id="phase1" class="fade-section mb-16">
+        <div class="section-card bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/50 rounded-2xl p-6 md:p-10 shadow-sm">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="phase-badge inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-500 text-white text-xs font-bold font-mono">P1</span>
+            <h2 class="font-display font-800 text-2xl md:text-3xl">Azure AD (Entra ID) Setup</h2>
+          </div>
+          <p class="text-sm text-surface-500 dark:text-surface-400 font-mono mb-6">Steps 1–6 · Configure your cloud identity provider</p>
+
+          <!-- Step 1 -->
+          <div class="mb-8">
+            <h3 class="font-display font-bold text-lg mb-2 flex items-center gap-2">
+              <span class="text-xs font-mono text-blue-500 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded">Step 1</span>
+              Create Azure AD Tenant
+            </h3>
+            <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-3">
+              Your Azure AD tenant is your organization's dedicated instance where all users, groups, and app registrations live. Navigate to <code class="text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded font-mono">portal.azure.com</code>, go to <strong>Azure Active Directory → Overview</strong>, and note your <strong>Tenant ID</strong> and <strong>Primary Domain</strong> (e.g., <code class="text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded font-mono">yourcompany.onmicrosoft.com</code>).
+            </p>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="mb-8">
+            <h3 class="font-display font-bold text-lg mb-2 flex items-center gap-2">
+              <span class="text-xs font-mono text-blue-500 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded">Step 2</span>
+              Create Users and Groups
+            </h3>
+            <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-3">
+              Groups are the foundation of RBAC. Create groups that mirror your organizational roles and departments. Each group will later map to a Keycloak role.
+            </p>
+            <div class="grid sm:grid-cols-2 gap-2 text-xs font-mono">
+              <div class="bg-surface-50 dark:bg-surface-900/40 rounded-lg px-3 py-2 border border-surface-200 dark:border-surface-700/40"><span class="text-emerald-500">●</span> Admin-FullAccess</div>
+              <div class="bg-surface-50 dark:bg-surface-900/40 rounded-lg px-3 py-2 border border-surface-200 dark:border-surface-700/40"><span class="text-blue-500">●</span> Manager-ReadWrite</div>
+              <div class="bg-surface-50 dark:bg-surface-900/40 rounded-lg px-3 py-2 border border-surface-200 dark:border-surface-700/40"><span class="text-amber-500">●</span> User-ReadOnly</div>
+              <div class="bg-surface-50 dark:bg-surface-900/40 rounded-lg px-3 py-2 border border-surface-200 dark:border-surface-700/40"><span class="text-rose-500">●</span> Finance-Department</div>
+              <div class="bg-surface-50 dark:bg-surface-900/40 rounded-lg px-3 py-2 border border-surface-200 dark:border-surface-700/40"><span class="text-violet-500">●</span> HR-Department</div>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="mb-8">
+            <h3 class="font-display font-bold text-lg mb-2 flex items-center gap-2">
+              <span class="text-xs font-mono text-blue-500 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded">Step 3</span>
+              Register Application in Azure AD
+            </h3>
+            <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-3">
+              This creates the OAuth2/OIDC endpoint Keycloak uses for federation. Go to <strong>App Registrations → New Registration</strong>, name it <code class="text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded font-mono">Keycloak-Federation</code>, set the redirect URI to your Keycloak broker endpoint, and capture the <strong>Application (client) ID</strong> and <strong>Directory (tenant) ID</strong>.
+            </p>
+            <div class="code-block bg-surface-900 dark:bg-surface-950 text-emerald-400 rounded-xl p-4 overflow-x-auto">
+              <pre>Redirect URI (Web):
+http://localhost:8080/realms/master/broker/azuread/endpoint
+
+Save these values:
+├── Application (client) ID:  [GUID]
+├── Directory (tenant) ID:    [GUID]
+└── Primary Domain:           yourcompany.onmicrosoft.com</pre>
+            </div>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="mb-8">
+            <h3 class="font-display font-bold text-lg mb-2 flex items-center gap-2">
+              <span class="text-xs font-mono text-blue-500 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded">Step 4</span>
+              Create Client Secret
+            </h3>
+            <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-3">
+              Keycloak needs credentials to authenticate to Azure AD. Go to <strong>Certificates & Secrets → New Client Secret</strong>. Copy the secret <em>value</em> immediately — you cannot retrieve it later. Set expiry to 24 months or per your security policy.
+            </p>
+            <div class="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 rounded-xl p-4 text-sm text-amber-800 dark:text-amber-300">
+              ⚠️ <strong>Critical:</strong> Copy the secret VALUE immediately after creation. Azure AD will only show it once. Store it securely in a secrets manager.
+            </div>
+          </div>
+
+          <!-- Step 5 -->
+          <div class="mb-8">
+            <h3 class="font-display font-bold text-lg mb-2 flex items-center gap-2">
+              <span class="text-xs font-mono text-blue-500 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded">Step 5</span>
+              Configure API Permissions
+            </h3>
+            <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-3">
+              Add Microsoft Graph delegated permissions so Keycloak can read user profiles and group memberships. Then grant admin consent for your organization.
+            </p>
+            <div class="flex flex-wrap gap-2 text-xs font-mono">
+              <span class="bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 px-3 py-1 rounded-full">openid</span>
+              <span class="bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 px-3 py-1 rounded-full">profile</span>
+              <span class="bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 px-3 py-1 rounded-full">email</span>
+              <span class="bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 px-3 py-1 rounded-full">User.Read</span>
+              <span class="bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 px-3 py-1 rounded-full">GroupMember.Read.All</span>
+            </div>
+          </div>
+
+          <!-- Step 6 -->
+          <div class="mb-6">
+            <h3 class="font-display font-bold text-lg mb-2 flex items-center gap-2">
+              <span class="text-xs font-mono text-blue-500 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded">Step 6</span>
+              Configure Token Claims
+            </h3>
+            <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-3">
+              Add optional claims (email, family_name, given_name) to the ID token, and enable group claims so Azure AD includes group memberships as Group IDs in tokens sent to Keycloak.
+            </p>
+          </div>
+
+          <!-- Deep Dive -->
+          <button onclick="toggleDeepDive('phase1-deep')" class="btn-glow inline-flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-display font-600 px-5 py-2.5 rounded-xl transition-all duration-300">
+            <svg class="w-4 h-4 deep-arrow transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            Deep Dive: Azure AD Concepts
+          </button>
+          <div id="phase1-deep" class="deep-dive-content mt-6">
+            <div class="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40 rounded-xl p-6 space-y-4 text-sm text-surface-700 dark:text-surface-300 leading-relaxed">
+              <div>
+                <h4 class="font-display font-bold text-blue-700 dark:text-blue-300 mb-1">What is a Tenant?</h4>
+                <p>A tenant is a dedicated, isolated instance of Azure AD that an organization receives when it signs up for a Microsoft cloud service. Think of it as your organization's private directory in the cloud. Every user, group, and app registration lives within a specific tenant. The Tenant ID (a GUID) uniquely identifies it across all of Microsoft's infrastructure.</p>
+              </div>
+              <div>
+                <h4 class="font-display font-bold text-blue-700 dark:text-blue-300 mb-1">App Registrations vs. Enterprise Applications</h4>
+                <p><strong>App Registration</strong> defines the identity configuration — client ID, secrets, redirect URIs, and permissions. It's the "blueprint." An <strong>Enterprise Application</strong> is the instantiation of that blueprint within a tenant — it controls who can use the app, conditional access policies, and sign-in logs. When you register an app, both are created automatically.</p>
+              </div>
+              <div>
+                <h4 class="font-display font-bold text-blue-700 dark:text-blue-300 mb-1">Delegated vs. Application Permissions</h4>
+                <p><strong>Delegated permissions</strong> are used when a signed-in user is present — the app acts on behalf of the user and can only access what the user themselves can access. <strong>Application permissions</strong> are for background services with no signed-in user — the app acts as itself with its own identity. For Keycloak federation, we use delegated permissions because users are actively signing in.</p>
+              </div>
+              <div>
+                <h4 class="font-display font-bold text-blue-700 dark:text-blue-300 mb-1">Why Group Claims Matter</h4>
+                <p>By including group Object IDs in the ID token, we avoid extra API calls to Microsoft Graph during login. Keycloak receives the group memberships directly in the token and can immediately map them to local roles. Without this, Keycloak would need to separately query the Graph API for each user's groups — adding latency and complexity.</p>
+              </div>
+              <div>
+                <h4 class="font-display font-bold text-blue-700 dark:text-blue-300 mb-1">Client Secret Security</h4>
+                <p>The client secret is essentially the "password" for your app registration. In production, consider using <strong>certificates</strong> instead of secrets for stronger security. Store secrets in Azure Key Vault or your preferred secret management solution. Never commit them to source control. Set calendar reminders before expiry to rotate them.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =============== PHASE 2: KEYCLOAK SETUP =============== -->
+      <section id="phase2" class="fade-section mb-16">
+        <div class="section-card bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/50 rounded-2xl p-6 md:p-10 shadow-sm">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="phase-badge inline-flex items-center justify-center w-8 h-8 rounded-lg bg-brand-500 text-white text-xs font-bold font-mono">P2</span>
+            <h2 class="font-display font-800 text-2xl md:text-3xl">Keycloak Installation & Setup</h2>
+          </div>
+          <p class="text-sm text-surface-500 dark:text-surface-400 font-mono mb-6">Steps 7–8 · Install and configure your identity broker</p>
+
+          <div class="mb-8">
+            <h3 class="font-display font-bold text-lg mb-2 flex items-center gap-2">
+              <span class="text-xs font-mono text-brand-500 bg-brand-50 dark:bg-brand-950/40 px-2 py-0.5 rounded">Step 7</span>
+              Install Keycloak
+            </h3>
+            <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-3">
+              Download and extract Keycloak, set admin credentials via environment variables, then start in development mode. Access the admin console at <code class="text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded font-mono">http://localhost:8080</code>.
+            </p>
+            <div class="code-block bg-surface-900 dark:bg-surface-950 text-emerald-400 rounded-xl p-4 overflow-x-auto">
+              <pre><span class="text-surface-500"># Download &amp; extract</span>
+wget https://github.com/keycloak/keycloak/releases/download/23.0.0/keycloak-23.0.0.zip
+unzip keycloak-23.0.0.zip && cd keycloak-23.0.0
+
+<span class="text-surface-500"># Set admin credentials</span>
+export KEYCLOAK_ADMIN=admin
+export KEYCLOAK_ADMIN_PASSWORD=admin123!
+
+<span class="text-surface-500"># Start (dev mode)</span>
+./bin/kc.sh start-dev
+
+<span class="text-surface-500"># Or production mode</span>
+./bin/kc.sh build
+./bin/kc.sh start --hostname=localhost</pre>
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <h3 class="font-display font-bold text-lg mb-2 flex items-center gap-2">
+              <span class="text-xs font-mono text-brand-500 bg-brand-50 dark:bg-brand-950/40 px-2 py-0.5 rounded">Step 8</span>
+              Create Keycloak Realm
+            </h3>
+            <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-3">
+              Realms are isolated tenants within Keycloak. Create a realm called <code class="text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded font-mono">enterprise-apps</code>. Disable user registration (since users come from Azure AD) and enable "Remember me."
+            </p>
+          </div>
+
+          <button onclick="toggleDeepDive('phase2-deep')" class="btn-glow inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white text-sm font-display font-600 px-5 py-2.5 rounded-xl transition-all duration-300">
+            <svg class="w-4 h-4 deep-arrow transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            Deep Dive: Keycloak Concepts
+          </button>
+          <div id="phase2-deep" class="deep-dive-content mt-6">
+            <div class="bg-brand-50/50 dark:bg-brand-950/20 border border-brand-200 dark:border-brand-800/40 rounded-xl p-6 space-y-4 text-sm text-surface-700 dark:text-surface-300 leading-relaxed">
+              <div>
+                <h4 class="font-display font-bold text-brand-700 dark:text-brand-300 mb-1">Realms: Multi-Tenancy in Keycloak</h4>
+                <p>A Realm is a space where you manage a set of users, credentials, roles, and groups. Realms are completely isolated from each other. The <code class="text-xs bg-surface-200 dark:bg-surface-700 px-1 rounded font-mono">master</code> realm is a special admin realm — you should create separate realms for your applications. Think of each realm like a separate Keycloak installation.</p>
+              </div>
+              <div>
+                <h4 class="font-display font-bold text-brand-700 dark:text-brand-300 mb-1">Dev Mode vs. Production Mode</h4>
+                <p><strong>Dev mode</strong> (<code class="text-xs bg-surface-200 dark:bg-surface-700 px-1 rounded font-mono">start-dev</code>) uses an embedded H2 database, disables HTTPS requirement, and enables hot-reload. <strong>Production mode</strong> requires you to configure an external database (PostgreSQL recommended), set up TLS certificates, configure hostname, and build an optimized server. Never use dev mode in production — the H2 database is not suitable for concurrent access.</p>
+              </div>
+              <div>
+                <h4 class="font-display font-bold text-brand-700 dark:text-brand-300 mb-1">Why Keycloak as a Broker?</h4>
+                <p>Using Keycloak as an identity broker gives you vendor independence. Your applications only need to know about Keycloak — they never directly communicate with Azure AD. If you later need to switch identity providers, add LDAP federation, or support social logins, you only change Keycloak's configuration, not your application code. Keycloak also adds capabilities Azure AD alone doesn't provide, like fine-grained authorization services.</p>
+              </div>
+              <div>
+                <h4 class="font-display font-bold text-brand-700 dark:text-brand-300 mb-1">Identity Provider vs. Identity Broker</h4>
+                <p>An <strong>Identity Provider (IdP)</strong> authenticates users — it's where credentials are verified (Azure AD in our case). An <strong>Identity Broker</strong> delegates authentication to external IdPs while managing its own sessions and token issuance. Keycloak is the broker: it doesn't verify passwords, but it manages the full lifecycle of user sessions, role mappings, and access tokens for your applications.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =============== PHASE 3: FEDERATION =============== -->
+      <section id="phase3" class="fade-section mb-16">
+        <div class="section-card bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/50 rounded-2xl p-6 md:p-10 shadow-sm">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="phase-badge inline-flex items-center justify-center w-8 h-8 rounded-lg bg-violet-500 text-white text-xs font-bold font-mono">P3</span>
+            <h2 class="font-display font-800 text-2xl md:text-3xl">Federation Configuration</h2>
+          </div>
+          <p class="text-sm text-surface-500 dark:text-surface-400 font-mono mb-6">Steps 9–10 · Connect Azure AD to Keycloak via OIDC</p>
+
+          <div class="mb-8">
+            <h3 class="font-display font-bold text-lg mb-2 flex items-center gap-2">
+              <span class="text-xs font-mono text-violet-500 bg-violet-50 dark:bg-violet-950/40 px-2 py-0.5 rounded">Step 9</span>
+              Add Azure AD as Identity Provider
+            </h3>
+            <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-3">
+              In Keycloak, add an OpenID Connect v1.0 identity provider with alias <code class="text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded font-mono">azuread</code>. Point the discovery endpoint to Azure AD's well-known configuration URL, provide the Client ID and Secret from your app registration, and configure attribute mappers.
+            </p>
+            <div class="code-block bg-surface-900 dark:bg-surface-950 text-emerald-400 rounded-xl p-4 overflow-x-auto mb-4">
+              <pre><span class="text-surface-500"># Discovery endpoint template</span>
+https://login.microsoftonline.com/{TENANT_ID}/v2.0/.well-known/openid-configuration
+
+<span class="text-surface-500"># Key settings</span>
+Alias:          azuread
+Client ID:      [from Azure AD App Registration]
+Client Secret:  [from Azure AD]
+Default Scopes: openid profile email
+Sync Mode:      IMPORT
+Trust Email:    ON</pre>
+            </div>
+            <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-3">
+              Configure four attribute mappers: <strong>email</strong>, <strong>firstName</strong> (from <code class="text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded font-mono">given_name</code>), <strong>lastName</strong> (from <code class="text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded font-mono">family_name</code>), and <strong>azure-groups</strong> (from the <code class="text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded font-mono">groups</code> claim).
+            </p>
+          </div>
+
+          <div class="mb-6">
+            <h3 class="font-display font-bold text-lg mb-2 flex items-center gap-2">
+              <span class="text-xs font-mono text-violet-500 bg-violet-50 dark:bg-violet-950/40 px-2 py-0.5 rounded">Step 10</span>
+              Update Azure AD Redirect URI
+            </h3>
+            <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed">
+              Copy the Redirect URI from Keycloak's identity provider settings and add it back in Azure AD's app registration under <strong>Authentication → Redirect URIs</strong>. This completes the OAuth2 redirect flow loop.
+            </p>
+          </div>
+
+          <button onclick="toggleDeepDive('phase3-deep')" class="btn-glow inline-flex items-center gap-2 bg-violet-500 hover:bg-violet-600 text-white text-sm font-display font-600 px-5 py-2.5 rounded-xl transition-all duration-300">
+            <svg class="w-4 h-4 deep-arrow transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            Deep Dive: OIDC & Federation
+          </button>
+          <div id="phase3-deep" class="deep-dive-content mt-6">
+            <div class="bg-violet-50/50 dark:bg-violet-950/20 border border-violet-200 dark:border-violet-800/40 rounded-xl p-6 space-y-4 text-sm text-surface-700 dark:text-surface-300 leading-relaxed">
+              <div>
+                <h4 class="font-display font-bold text-violet-700 dark:text-violet-300 mb-1">OIDC Discovery Endpoint</h4>
+                <p>The <code class="text-xs bg-surface-200 dark:bg-surface-700 px-1 rounded font-mono">.well-known/openid-configuration</code> URL returns a JSON document describing all the endpoints (authorization, token, userinfo, JWKS), supported scopes, claims, and algorithms. Keycloak reads this once during setup, so it automatically knows where to send users for login, where to exchange codes for tokens, and where to find the public keys for JWT validation.</p>
+              </div>
+              <div>
+                <h4 class="font-display font-bold text-violet-700 dark:text-violet-300 mb-1">Mappers: The Bridge Between Systems</h4>
+                <p>Claim mappers are the critical translation layer. Azure AD tokens use specific claim names (e.g., <code class="text-xs bg-surface-200 dark:bg-surface-700 px-1 rounded font-mono">given_name</code>) while Keycloak uses different attribute names (e.g., <code class="text-xs bg-surface-200 dark:bg-surface-700 px-1 rounded font-mono">firstName</code>). Mappers extract values from incoming Azure AD tokens and write them to the correct Keycloak user attributes. Without proper mappers, user profiles would be incomplete and group-to-role mapping wouldn't work.</p>
+              </div>
+              <div>
+                <h4 class="font-display font-bold text-violet-700 dark:text-violet-300 mb-1">Sync Mode: IMPORT vs. FORCE</h4>
+                <p><strong>IMPORT</strong> creates the user on first login and doesn't update attributes on subsequent logins. <strong>FORCE</strong> updates user attributes from Azure AD on every login. Use FORCE for attributes you want to stay in sync (like groups and department), and IMPORT for attributes users might customize locally in Keycloak.</p>
+              </div>
+              <div>
+                <h4 class="font-display font-bold text-violet-700 dark:text-violet-300 mb-1">The Redirect URI Dance</h4>
+                <p>OAuth2 security relies on the redirect URI being exactly registered. The flow is: your app → Keycloak login → Azure AD login → back to Keycloak (at the broker endpoint) → back to your app. Both Keycloak and Azure AD must have each other's redirect URIs registered. A mismatch of even one character (trailing slash, http vs https) will cause a "redirect_uri_mismatch" error.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =============== PHASE 4: RBAC =============== -->
+      <section id="phase4" class="fade-section mb-16">
+        <div class="section-card bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/50 rounded-2xl p-6 md:p-10 shadow-sm">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="phase-badge inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-500 text-white text-xs font-bold font-mono">P4</span>
+            <h2 class="font-display font-800 text-2xl md:text-3xl">RBAC Setup</h2>
+          </div>
+          <p class="text-sm text-surface-500 dark:text-surface-400 font-mono mb-6">Steps 11–12 · Roles, composite roles, and group mapping</p>
+
+          <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-4">Create Keycloak roles that define what users can do, then map Azure AD groups to those roles for automatic assignment.</p>
+
+          <!-- Role hierarchy visualization -->
+          <div class="bg-surface-50 dark:bg-surface-900/40 border border-surface-200 dark:border-surface-700/40 rounded-xl p-5 mb-6">
+            <h4 class="font-display font-bold text-sm mb-3">Role Hierarchy (Composite Roles)</h4>
+            <div class="code-block text-xs text-surface-700 dark:text-surface-300">
+              <pre>admin (full access)
+└── executive
+    └── director
+        └── manager
+            └── employee (base level)
+
+<span class="text-brand-500">Composite = inherits all child roles</span>
+A "director" automatically has manager + employee permissions</pre>
+            </div>
+          </div>
+
+          <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-4">Use <strong>Advanced Claim to Role</strong> mappers to automatically assign Keycloak roles based on Azure AD group Object IDs. For example, membership in the <code class="text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded font-mono">Manager-ReadWrite</code> Azure AD group grants the <code class="text-xs bg-surface-100 dark:bg-surface-700 px-1.5 py-0.5 rounded font-mono">manager</code> Keycloak role.</p>
+
+          <button onclick="toggleDeepDive('phase4-deep')" class="btn-glow inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-display font-600 px-5 py-2.5 rounded-xl transition-all duration-300">
+            <svg class="w-4 h-4 deep-arrow transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            Deep Dive: RBAC Concepts
+          </button>
+          <div id="phase4-deep" class="deep-dive-content mt-6">
+            <div class="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 rounded-xl p-6 space-y-4 text-sm text-surface-700 dark:text-surface-300 leading-relaxed">
+              <div>
+                <h4 class="font-display font-bold text-emerald-700 dark:text-emerald-300 mb-1">Why Composite Roles?</h4>
+                <p>Composite roles create an inheritance chain. Instead of assigning 15 individual permissions to a director, you assign one "director" role that automatically includes manager and employee permissions. This reduces administrative overhead and ensures consistency — when you add a new base permission, every composite role above it inherits it automatically.</p>
+              </div>
+              <div>
+                <h4 class="font-display font-bold text-emerald-700 dark:text-emerald-300 mb-1">Realm Roles vs. Client Roles</h4>
+                <p><strong>Realm roles</strong> are global within a Keycloak realm — they apply across all applications. <strong>Client roles</strong> are specific to a single application (client). For enterprise setups, use realm roles for organizational hierarchy (employee, manager, director) and client roles for application-specific permissions (can_edit_invoice, can_approve_order).</p>
+              </div>
+              <div>
+                <h4 class="font-display font-bold text-emerald-700 dark:text-emerald-300 mb-1">Role Composition in Detail</h4>
+                <div class="code-block bg-white/60 dark:bg-surface-900/40 rounded-lg p-3 mt-2">
+                  <pre class="text-xs">employee: document:read, document:create, profile:read-own,
+          profile:update-own, access-public, access-internal
+
+manager:  ↑ employee + document:update, document:share,
+          profile:read-team, access-confidential
+
+director: ↑ manager + document:delete, profile:read-dept,
+          access-restricted, admin:audit-logs
+
+executive: ↑ director + profile:read-all, access-top-secret,
+           admin:user-management</pre>
+                </div>
+              </div>
+              <div>
+                <h4 class="font-display font-bold text-emerald-700 dark:text-emerald-300 mb-1">Group-to-Role Mapping Strategy</h4>
+                <p>The "Advanced Claim to Role" mapper watches for a specific Azure AD Group Object ID in the <code class="text-xs bg-surface-200 dark:bg-surface-700 px-1 rounded font-mono">groups</code> claim of the incoming token. When it finds a match, it assigns the corresponding Keycloak role. Set <strong>Sync Mode to FORCE</strong> so that if a user is removed from an Azure AD group, their Keycloak role is also removed on next login.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =============== PHASE 5: APP INTEGRATION & CELL-LEVEL =============== -->
+      <section id="phase5" class="fade-section mb-16">
+        <div class="section-card bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/50 rounded-2xl p-6 md:p-10 shadow-sm">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="phase-badge inline-flex items-center justify-center w-8 h-8 rounded-lg bg-rose-500 text-white text-xs font-bold font-mono">P5</span>
+            <h2 class="font-display font-800 text-2xl md:text-3xl">App Integration & Cell-Level Security</h2>
+          </div>
+          <p class="text-sm text-surface-500 dark:text-surface-400 font-mono mb-6">Steps 13–15 · Client config, scopes, and fine-grained access</p>
+
+          <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-4">Register your application as a Keycloak client, configure client scopes to include roles in JWT tokens, then implement cell-level security using user attributes and Keycloak's Authorization Services.</p>
+
+          <div class="grid sm:grid-cols-2 gap-4 mb-6">
+            <div class="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800/40 rounded-xl p-4">
+              <h4 class="font-display font-bold text-sm text-rose-700 dark:text-rose-300 mb-2">Approach 1: User Attributes</h4>
+              <p class="text-xs text-surface-600 dark:text-surface-400 leading-relaxed">Add attributes like <code class="font-mono">department</code>, <code class="font-mono">region</code>, <code class="font-mono">data_classification</code> to users. Map them into access tokens via client scope mappers. Application code reads these from the JWT to filter data.</p>
+            </div>
+            <div class="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800/40 rounded-xl p-4">
+              <h4 class="font-display font-bold text-sm text-rose-700 dark:text-rose-300 mb-2">Approach 2: Authorization Services</h4>
+              <p class="text-xs text-surface-600 dark:text-surface-400 leading-relaxed">Define Resources, Scopes, Policies, and Permissions in Keycloak. Policies can be role-based, JavaScript-based, or time-based. Keycloak evaluates policies at runtime and returns authorization decisions.</p>
+            </div>
+          </div>
+
+          <button onclick="toggleDeepDive('phase5-deep')" class="btn-glow inline-flex items-center gap-2 bg-rose-500 hover:bg-rose-600 text-white text-sm font-display font-600 px-5 py-2.5 rounded-xl transition-all duration-300">
+            <svg class="w-4 h-4 deep-arrow transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            Deep Dive: Cell-Level Security
+          </button>
+          <div id="phase5-deep" class="deep-dive-content mt-6">
+            <div class="bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800/40 rounded-xl p-6 space-y-4 text-sm text-surface-700 dark:text-surface-300 leading-relaxed">
+              <div>
+                <h4 class="font-display font-bold text-rose-700 dark:text-rose-300 mb-1">What Is Cell-Level Security?</h4>
+                <p>Unlike RBAC (which controls what actions you can perform), cell-level security controls which specific data items you can see. A "manager" might have read access to documents, but cell-level security ensures they only see documents from their own department, not every department's documents. It's the difference between "can you read documents?" (RBAC) and "which documents can you read?" (cell-level).</p>
+              </div>
+              <div>
+                <h4 class="font-display font-bold text-rose-700 dark:text-rose-300 mb-1">Data Classification Levels</h4>
+                <p>Documents are classified as <strong>Public</strong> (everyone), <strong>Internal</strong> (any employee), <strong>Confidential</strong> (managers+), <strong>Restricted</strong> (directors+), or <strong>Top-Secret</strong> (executives only). The classification-level policy in Keycloak checks the user's highest role against the document's classification to grant or deny access.</p>
+              </div>
+              <div>
+                <h4 class="font-display font-bold text-rose-700 dark:text-rose-300 mb-1">PostgreSQL Row-Level Security</h4>
+                <p>For the deepest level of protection, use database-level row security. PostgreSQL's RLS policies automatically filter query results based on session variables set from the JWT token. Even if application code has a bug that skips a permission check, the database itself enforces the access rules — it's defense in depth.</p>
+                <div class="code-block bg-white/60 dark:bg-surface-900/40 rounded-lg p-3 mt-2">
+                  <pre class="text-xs"><span class="text-rose-400">-- Enable RLS on the table</span>
+ALTER TABLE financial_records ENABLE ROW LEVEL SECURITY;
+
+<span class="text-rose-400">-- Policy: users only see their department's rows</span>
+CREATE POLICY dept_isolation ON financial_records
+  USING (department = current_setting('app.user_department'));
+
+<span class="text-rose-400">-- In app code: set the session variable from JWT</span>
+await db.query(`SET app.user_department = $1`, [token.department]);</pre>
+                </div>
+              </div>
+              <div>
+                <h4 class="font-display font-bold text-rose-700 dark:text-rose-300 mb-1">Keycloak Authorization Services: Resources → Policies → Permissions</h4>
+                <p><strong>Resources</strong> represent what you're protecting (e.g., <code class="text-xs bg-surface-200 dark:bg-surface-700 px-1 rounded font-mono">/api/finance/*</code>). <strong>Scopes</strong> define actions (view, edit, delete). <strong>Policies</strong> define the rules (must have role X, must be in department Y). <strong>Permissions</strong> tie them together: "Resource A + Scope B requires Policy C." The Decision Strategy (Affirmative = any policy passes, Unanimous = all must pass) controls how multiple policies combine.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =============== PHASE 6: SSO =============== -->
+      <section id="phase6" class="fade-section mb-16">
+        <div class="section-card bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/50 rounded-2xl p-6 md:p-10 shadow-sm">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="phase-badge inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-500 text-white text-xs font-bold font-mono">P6</span>
+            <h2 class="font-display font-800 text-2xl md:text-3xl">Single Sign-On (SSO)</h2>
+          </div>
+          <p class="text-sm text-surface-500 dark:text-surface-400 font-mono mb-6">Steps 16–17 · Session settings and testing the flow</p>
+
+          <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-4">Configure SSO session lifespans in Keycloak, set appropriate token lifetimes, then test the complete authentication flow end-to-end.</p>
+
+          <div class="grid sm:grid-cols-2 gap-4 mb-6">
+            <div class="bg-surface-50 dark:bg-surface-900/40 border border-surface-200 dark:border-surface-700/40 rounded-xl p-4">
+              <h4 class="font-display font-bold text-xs uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-2">Session Settings</h4>
+              <div class="space-y-1.5 text-xs font-mono text-surface-600 dark:text-surface-400">
+                <div class="flex justify-between"><span>SSO Session Idle</span><span class="text-surface-900 dark:text-surface-100">30 min</span></div>
+                <div class="flex justify-between"><span>SSO Session Max</span><span class="text-surface-900 dark:text-surface-100">10 hrs</span></div>
+                <div class="flex justify-between"><span>Remember Me Idle</span><span class="text-surface-900 dark:text-surface-100">7 days</span></div>
+                <div class="flex justify-between"><span>Remember Me Max</span><span class="text-surface-900 dark:text-surface-100">30 days</span></div>
+              </div>
+            </div>
+            <div class="bg-surface-50 dark:bg-surface-900/40 border border-surface-200 dark:border-surface-700/40 rounded-xl p-4">
+              <h4 class="font-display font-bold text-xs uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-2">Token Lifespans</h4>
+              <div class="space-y-1.5 text-xs font-mono text-surface-600 dark:text-surface-400">
+                <div class="flex justify-between"><span>Access Token</span><span class="text-surface-900 dark:text-surface-100">5 min</span></div>
+                <div class="flex justify-between"><span>Implicit Flow Token</span><span class="text-surface-900 dark:text-surface-100">15 min</span></div>
+                <div class="flex justify-between"><span>Client Login Timeout</span><span class="text-surface-900 dark:text-surface-100">1 min</span></div>
+                <div class="flex justify-between"><span>Login Action Timeout</span><span class="text-surface-900 dark:text-surface-100">5 min</span></div>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="toggleDeepDive('phase6-deep')" class="btn-glow inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-display font-600 px-5 py-2.5 rounded-xl transition-all duration-300">
+            <svg class="w-4 h-4 deep-arrow transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            Deep Dive: SSO & Token Concepts
+          </button>
+          <div id="phase6-deep" class="deep-dive-content mt-6">
+            <div class="bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 rounded-xl p-6 space-y-4 text-sm text-surface-700 dark:text-surface-300 leading-relaxed">
+              <div>
+                <h4 class="font-display font-bold text-amber-700 dark:text-amber-300 mb-1">How SSO Works Across Applications</h4>
+                <p>When a user logs in to App A, Keycloak creates a session cookie in the browser. When the user then visits App B, that app redirects to Keycloak, but Keycloak sees the existing session cookie and immediately redirects back with new tokens — no login prompt. The user perceives instant access across all connected apps.</p>
+              </div>
+              <div>
+                <h4 class="font-display font-bold text-amber-700 dark:text-amber-300 mb-1">Why Short Access Token Lifespans?</h4>
+                <p>Access tokens are "bearer tokens" — anyone who has one can use it. Short lifespans (5 minutes) limit the damage if a token is leaked. Applications use <strong>refresh tokens</strong> (longer-lived, stored securely server-side) to silently get new access tokens without making the user log in again. This pattern is called "silent renewal."</p>
+              </div>
+              <div>
+                <h4 class="font-display font-bold text-amber-700 dark:text-amber-300 mb-1">Testing the Token</h4>
+                <p>Use <code class="text-xs bg-surface-200 dark:bg-surface-700 px-1 rounded font-mono">jwt.io</code> to decode your access token and verify it contains the expected claims: user email, name, realm_access.roles array, department, and any custom attributes. The token header shows the signing algorithm (RS256), and you can validate the signature using Keycloak's public key from its JWKS endpoint.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =============== PHASE 7: APP IMPLEMENTATION =============== -->
+      <section id="phase7" class="fade-section mb-16">
+        <div class="section-card bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/50 rounded-2xl p-6 md:p-10 shadow-sm">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="phase-badge inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-500 text-white text-xs font-bold font-mono">P7</span>
+            <h2 class="font-display font-800 text-2xl md:text-3xl">Application Implementation</h2>
+          </div>
+          <p class="text-sm text-surface-500 dark:text-surface-400 font-mono mb-6">Step 18 · Node.js integration example</p>
+
+          <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-4">A sample Express.js application showing public routes, protected routes, role-based endpoints, and cell-level data filtering using the Keycloak Node.js adapter.</p>
+
+          <div class="code-block bg-surface-900 dark:bg-surface-950 text-emerald-400 rounded-xl p-4 overflow-x-auto mb-4">
+            <pre><span class="text-surface-500">// Key endpoints pattern</span>
+app.get('/',        <span class="text-amber-400">/* public */</span>);
+app.get('/secure',  keycloak.protect(), <span class="text-amber-400">/* any authenticated user */</span>);
+app.get('/admin',   keycloak.protect('admin'), <span class="text-amber-400">/* admin role required */</span>);
+app.get('/manager', keycloak.protect('manager'), <span class="text-amber-400">/* manager role required */</span>);
+
+<span class="text-surface-500">// Cell-level security in route handler</span>
+app.get('/api/finance', keycloak.protect(), (req, res) => {
+  const token = req.kauth.grant.access_token.content;
+  if (token.realm_access.roles.includes('finance-analyst')
+      || token.department === 'finance') {
+    <span class="text-amber-400">// Grant access to financial data</span>
+  } else {
+    res.status(403).json({ error: 'Access denied' });
+  }
+});</pre>
+          </div>
+
+          <button onclick="toggleDeepDive('phase7-deep')" class="btn-glow inline-flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-display font-600 px-5 py-2.5 rounded-xl transition-all duration-300">
+            <svg class="w-4 h-4 deep-arrow transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            Deep Dive: Code Patterns
+          </button>
+          <div id="phase7-deep" class="deep-dive-content mt-6">
+            <div class="bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-800/40 rounded-xl p-6 space-y-4 text-sm text-surface-700 dark:text-surface-300 leading-relaxed">
+              <div>
+                <h4 class="font-display font-bold text-indigo-700 dark:text-indigo-300 mb-1">The keycloak-connect Middleware</h4>
+                <p>The <code class="text-xs bg-surface-200 dark:bg-surface-700 px-1 rounded font-mono">keycloak-connect</code> package handles the entire OIDC flow for your Express app. <code class="text-xs bg-surface-200 dark:bg-surface-700 px-1 rounded font-mono">keycloak.protect()</code> checks for a valid session/token and redirects to login if missing. <code class="text-xs bg-surface-200 dark:bg-surface-700 px-1 rounded font-mono">keycloak.protect('admin')</code> additionally verifies the user has the specified realm role. The token content is available at <code class="text-xs bg-surface-200 dark:bg-surface-700 px-1 rounded font-mono">req.kauth.grant.access_token.content</code>.</p>
+              </div>
+              <div>
+                <h4 class="font-display font-bold text-indigo-700 dark:text-indigo-300 mb-1">Layered Security Pattern</h4>
+                <p>Good security is layered: (1) the Keycloak middleware verifies authentication, (2) role checks verify authorization at the action level, (3) cell-level checks filter data by department/ownership, (4) PostgreSQL RLS provides database-level enforcement. Even if one layer has a bug, the others still protect your data.</p>
+              </div>
+              <div>
+                <h4 class="font-display font-bold text-indigo-700 dark:text-indigo-300 mb-1">UMA Ticket Authorization</h4>
+                <p>For Keycloak's Authorization Services, your app requests a "UMA ticket" from Keycloak's token endpoint, specifying which resource and scope it wants to access. Keycloak evaluates all applicable policies and returns a decision. This moves complex authorization logic out of your application code and into Keycloak's centrally managed policies.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =============== PHASE 8: ADVANCED CELL SECURITY =============== -->
+      <section id="phase8" class="fade-section mb-16">
+        <div class="section-card bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/50 rounded-2xl p-6 md:p-10 shadow-sm">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="phase-badge inline-flex items-center justify-center w-8 h-8 rounded-lg bg-pink-500 text-white text-xs font-bold font-mono">P8</span>
+            <h2 class="font-display font-800 text-2xl md:text-3xl">Advanced Cell-Level Security</h2>
+          </div>
+          <p class="text-sm text-surface-500 dark:text-surface-400 font-mono mb-6">Step 19 · Database-level row security with PostgreSQL</p>
+
+          <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-4">Implement defense-in-depth by enabling PostgreSQL Row-Level Security. Even if your application code has a flaw, the database enforces access rules automatically based on session variables set from the user's JWT token.</p>
+
+          <div class="code-block bg-surface-900 dark:bg-surface-950 text-emerald-400 rounded-xl p-4 overflow-x-auto mb-6">
+            <pre><span class="text-surface-500">-- Create table &amp; enable RLS</span>
+CREATE TABLE financial_records (
+  id SERIAL PRIMARY KEY,
+  department VARCHAR(50),
+  region VARCHAR(50),
+  amount DECIMAL(10,2),
+  description TEXT
+);
+ALTER TABLE financial_records ENABLE ROW LEVEL SECURITY;
+
+<span class="text-surface-500">-- Users only see rows matching their department</span>
+CREATE POLICY department_isolation ON financial_records
+  USING (department = current_setting('app.user_department', true));
+
+<span class="text-surface-500">-- In app: set session var from JWT before any query</span>
+await db.query(`SET app.user_department = $1`, [token.department]);
+const results = await db.query('SELECT * FROM financial_records');
+<span class="text-amber-400">-- ↑ Automatically filtered by department!</span></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- =============== PHASE 9: MONITORING =============== -->
+      <section id="phase9" class="fade-section mb-16">
+        <div class="section-card bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/50 rounded-2xl p-6 md:p-10 shadow-sm">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="phase-badge inline-flex items-center justify-center w-8 h-8 rounded-lg bg-cyan-500 text-white text-xs font-bold font-mono">P9</span>
+            <h2 class="font-display font-800 text-2xl md:text-3xl">Monitoring & Troubleshooting</h2>
+          </div>
+          <p class="text-sm text-surface-500 dark:text-surface-400 font-mono mb-6">Step 20 · Logging, events, and common issues</p>
+
+          <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-6">Enable event logging in both Keycloak and Azure AD to monitor authentication flows, audit access, and diagnose problems.</p>
+
+          <div class="grid sm:grid-cols-2 gap-4 mb-6">
+            <div class="bg-surface-50 dark:bg-surface-900/40 border border-surface-200 dark:border-surface-700/40 rounded-xl p-4">
+              <h4 class="font-display font-bold text-sm mb-2">Keycloak Events</h4>
+              <p class="text-xs text-surface-500 dark:text-surface-400 leading-relaxed">Realm Settings → Events: enable Login Events and Admin Events with 7-day expiration. Monitor successful/failed logins, track IdP usage, and review token issuance.</p>
+            </div>
+            <div class="bg-surface-50 dark:bg-surface-900/40 border border-surface-200 dark:border-surface-700/40 rounded-xl p-4">
+              <h4 class="font-display font-bold text-sm mb-2">Azure AD Sign-in Logs</h4>
+              <p class="text-xs text-surface-500 dark:text-surface-400 leading-relaxed">Azure Portal → Azure AD → Sign-in logs: monitor authentication requests from Keycloak, review consent grants, and check for errors.</p>
+            </div>
+          </div>
+
+          <!-- Common Issues -->
+          <h3 class="font-display font-bold text-lg mb-4">Common Issues & Fixes</h3>
+          <div class="space-y-3 mb-6">
+            <details class="group bg-surface-50 dark:bg-surface-900/40 border border-surface-200 dark:border-surface-700/40 rounded-xl">
+              <summary class="cursor-pointer px-4 py-3 text-sm font-display font-600 flex items-center justify-between">
+                Users can't log in via Azure AD
+                <svg class="w-4 h-4 transition-transform group-open:rotate-180 text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </summary>
+              <div class="px-4 pb-4 text-xs text-surface-600 dark:text-surface-400 leading-relaxed">
+                Check that the redirect URI matches exactly (no trailing slash differences). Verify the client secret hasn't expired. Confirm Azure AD app permissions are granted admin consent. Enable debug logging: <code class="bg-surface-200 dark:bg-surface-700 px-1 rounded font-mono">./bin/kc.sh start-dev --log-level=DEBUG</code>
+              </div>
+            </details>
+            <details class="group bg-surface-50 dark:bg-surface-900/40 border border-surface-200 dark:border-surface-700/40 rounded-xl">
+              <summary class="cursor-pointer px-4 py-3 text-sm font-display font-600 flex items-center justify-between">
+                Roles not appearing in tokens
+                <svg class="w-4 h-4 transition-transform group-open:rotate-180 text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </summary>
+              <div class="px-4 pb-4 text-xs text-surface-600 dark:text-surface-400 leading-relaxed">
+                Verify group claims are configured in Azure AD token configuration. Check Keycloak identity provider mappers are using the correct Azure AD Group Object IDs. Ensure the client scope includes the realm role mapper and is assigned to your client.
+              </div>
+            </details>
+            <details class="group bg-surface-50 dark:bg-surface-900/40 border border-surface-200 dark:border-surface-700/40 rounded-xl">
+              <summary class="cursor-pointer px-4 py-3 text-sm font-display font-600 flex items-center justify-between">
+                Cell-level security not working
+                <svg class="w-4 h-4 transition-transform group-open:rotate-180 text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </summary>
+              <div class="px-4 pb-4 text-xs text-surface-600 dark:text-surface-400 leading-relaxed">
+                Verify user attributes are synced from Azure AD (check the user in Keycloak admin). Ensure attribute mappers in client scopes include the attributes in the access token (not just ID token). Review authorization policy JavaScript logic and test in Keycloak's Policy Evaluation tab.
+              </div>
+            </details>
+            <details class="group bg-surface-50 dark:bg-surface-900/40 border border-surface-200 dark:border-surface-700/40 rounded-xl">
+              <summary class="cursor-pointer px-4 py-3 text-sm font-display font-600 flex items-center justify-between">
+                SSO session timeout issues
+                <svg class="w-4 h-4 transition-transform group-open:rotate-180 text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </summary>
+              <div class="px-4 pb-4 text-xs text-surface-600 dark:text-surface-400 leading-relaxed">
+                Align session timeouts between Azure AD and Keycloak — if Azure AD's session expires but Keycloak's hasn't, the user may get unexpected re-login prompts. Check token lifespan configuration and verify the refresh token flow is working correctly in your application.
+              </div>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <!-- =============== ACCESS CONTROL MATRIX =============== -->
+      <section id="access-matrix" class="fade-section mb-16">
+        <div class="section-card bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/50 rounded-2xl p-6 md:p-10 shadow-sm">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-brand-600 flex items-center justify-center text-white text-lg">📊</div>
+            <div>
+              <h2 class="font-display font-800 text-2xl md:text-3xl">Access Control Matrix</h2>
+              <p class="text-sm text-surface-500 dark:text-surface-400 font-mono">Who can do what</p>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto -mx-2">
+            <table class="access-matrix w-full text-xs border-collapse">
+              <thead>
+                <tr class="bg-surface-100 dark:bg-surface-900/60">
+                  <th class="text-left px-3 py-2.5 font-display font-bold text-surface-700 dark:text-surface-200 rounded-tl-lg">Role</th>
+                  <th class="font-mono text-surface-500 dark:text-surface-400">Create</th>
+                  <th class="font-mono text-surface-500 dark:text-surface-400">Own</th>
+                  <th class="font-mono text-surface-500 dark:text-surface-400">Public</th>
+                  <th class="font-mono text-surface-500 dark:text-surface-400">Team</th>
+                  <th class="font-mono text-surface-500 dark:text-surface-400">Dept</th>
+                  <th class="font-mono text-surface-500 dark:text-surface-400">All</th>
+                  <th class="font-mono text-surface-500 dark:text-surface-400">Edit Own</th>
+                  <th class="font-mono text-surface-500 dark:text-surface-400">Edit Team</th>
+                  <th class="font-mono text-surface-500 dark:text-surface-400">Delete</th>
+                  <th class="font-mono text-surface-500 dark:text-surface-400">Share</th>
+                  <th class="font-mono text-surface-500 dark:text-surface-400 rounded-tr-lg">Audit</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-surface-100 dark:divide-surface-700/30">
+                <tr class="hover:bg-surface-50 dark:hover:bg-surface-800/40 transition">
+                  <td class="text-left px-3 font-display font-600 text-surface-700 dark:text-surface-200">Employee</td>
+                  <td>✅</td><td>✅</td><td>✅</td><td>❌</td><td class="text-amber-500">⚠️</td><td>❌</td><td>✅</td><td>❌</td><td>✅</td><td>❌</td><td>❌</td>
+                </tr>
+                <tr class="hover:bg-surface-50 dark:hover:bg-surface-800/40 transition">
+                  <td class="text-left px-3 font-display font-600 text-surface-700 dark:text-surface-200">Manager</td>
+                  <td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>❌</td><td>✅</td><td>✅</td><td class="text-amber-500">⚠️</td><td>✅</td><td>❌</td>
+                </tr>
+                <tr class="hover:bg-surface-50 dark:hover:bg-surface-800/40 transition">
+                  <td class="text-left px-3 font-display font-600 text-surface-700 dark:text-surface-200">Director</td>
+                  <td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td>
+                </tr>
+                <tr class="hover:bg-surface-50 dark:hover:bg-surface-800/40 transition">
+                  <td class="text-left px-3 font-display font-600 text-surface-700 dark:text-surface-200">Executive</td>
+                  <td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="text-xs text-surface-400 dark:text-surface-500 mt-3">⚠️ = Limited by classification level and department membership</p>
+        </div>
+      </section>
+
+      <!-- =============== SECURITY BEST PRACTICES =============== -->
+      <section id="security" class="fade-section mb-16">
+        <div class="section-card bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/50 rounded-2xl p-6 md:p-10 shadow-sm">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white text-lg">🔒</div>
+            <div>
+              <h2 class="font-display font-800 text-2xl md:text-3xl">Security Best Practices</h2>
+              <p class="text-sm text-surface-500 dark:text-surface-400 font-mono">Production hardening</p>
+            </div>
+          </div>
+
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div class="bg-surface-50 dark:bg-surface-900/40 border border-surface-200 dark:border-surface-700/40 rounded-xl p-4">
+              <h4 class="font-display font-bold text-sm mb-1">🔐 Use HTTPS Everywhere</h4>
+              <p class="text-xs text-surface-500 dark:text-surface-400 leading-relaxed">Never use HTTP for identity flows in production. Configure proper SSL/TLS certificates for both Keycloak and your applications.</p>
+            </div>
+            <div class="bg-surface-50 dark:bg-surface-900/40 border border-surface-200 dark:border-surface-700/40 rounded-xl p-4">
+              <h4 class="font-display font-bold text-sm mb-1">🗝 Secure Client Secrets</h4>
+              <p class="text-xs text-surface-500 dark:text-surface-400 leading-relaxed">Store in environment variables or secret managers (Azure Key Vault, HashiCorp Vault). Rotate regularly and never commit to source control.</p>
+            </div>
+            <div class="bg-surface-50 dark:bg-surface-900/40 border border-surface-200 dark:border-surface-700/40 rounded-xl p-4">
+              <h4 class="font-display font-bold text-sm mb-1">✅ Validate JWT Tokens</h4>
+              <p class="text-xs text-surface-500 dark:text-surface-400 leading-relaxed">Always verify JWT signatures, check expiration times, and validate the issuer and audience claims. Never trust tokens without full validation.</p>
+            </div>
+            <div class="bg-surface-50 dark:bg-surface-900/40 border border-surface-200 dark:border-surface-700/40 rounded-xl p-4">
+              <h4 class="font-display font-bold text-sm mb-1">⏱ Short Token Lifespans</h4>
+              <p class="text-xs text-surface-500 dark:text-surface-400 leading-relaxed">Access tokens: 5–15 minutes. Use refresh tokens for extended sessions. This limits exposure if a token is intercepted.</p>
+            </div>
+            <div class="bg-surface-50 dark:bg-surface-900/40 border border-surface-200 dark:border-surface-700/40 rounded-xl p-4">
+              <h4 class="font-display font-bold text-sm mb-1">📱 Enable MFA in Azure AD</h4>
+              <p class="text-xs text-surface-500 dark:text-surface-400 leading-relaxed">Add an extra security layer. Required for all admin accounts. Consider Conditional Access policies for risk-based MFA.</p>
+            </div>
+            <div class="bg-surface-50 dark:bg-surface-900/40 border border-surface-200 dark:border-surface-700/40 rounded-xl p-4">
+              <h4 class="font-display font-bold text-sm mb-1">📋 Regular Audits</h4>
+              <p class="text-xs text-surface-500 dark:text-surface-400 leading-relaxed">Review access logs monthly. Check for unused accounts. Audit role assignments. Apply the principle of least privilege everywhere.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =============== TESTING CHECKLIST =============== -->
+      <section id="checklist" class="fade-section mb-16">
+        <div class="section-card bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/50 rounded-2xl p-6 md:p-10 shadow-sm">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-white text-lg">✓</div>
+            <div>
+              <h2 class="font-display font-800 text-2xl md:text-3xl">Testing Checklist</h2>
+              <p class="text-sm text-surface-500 dark:text-surface-400 font-mono">End-to-end verification</p>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <label class="check-item flex items-start gap-3 bg-surface-50 dark:bg-surface-900/40 rounded-xl px-4 py-3 cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-800/40 transition">
+              <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-surface-300 dark:border-surface-600 text-brand-500 focus:ring-brand-500">
+              <span class="text-sm text-surface-700 dark:text-surface-300">Azure AD user can log into Keycloak via SSO</span>
+            </label>
+            <label class="check-item flex items-start gap-3 bg-surface-50 dark:bg-surface-900/40 rounded-xl px-4 py-3 cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-800/40 transition">
+              <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-surface-300 dark:border-surface-600 text-brand-500 focus:ring-brand-500">
+              <span class="text-sm text-surface-700 dark:text-surface-300">User attributes sync correctly (email, name, groups)</span>
+            </label>
+            <label class="check-item flex items-start gap-3 bg-surface-50 dark:bg-surface-900/40 rounded-xl px-4 py-3 cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-800/40 transition">
+              <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-surface-300 dark:border-surface-600 text-brand-500 focus:ring-brand-500">
+              <span class="text-sm text-surface-700 dark:text-surface-300">Azure AD groups map to correct Keycloak roles</span>
+            </label>
+            <label class="check-item flex items-start gap-3 bg-surface-50 dark:bg-surface-900/40 rounded-xl px-4 py-3 cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-800/40 transition">
+              <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-surface-300 dark:border-surface-600 text-brand-500 focus:ring-brand-500">
+              <span class="text-sm text-surface-700 dark:text-surface-300">Access tokens contain correct roles in realm_access.roles</span>
+            </label>
+            <label class="check-item flex items-start gap-3 bg-surface-50 dark:bg-surface-900/40 rounded-xl px-4 py-3 cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-800/40 transition">
+              <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-surface-300 dark:border-surface-600 text-brand-500 focus:ring-brand-500">
+              <span class="text-sm text-surface-700 dark:text-surface-300">Application enforces role-based access correctly</span>
+            </label>
+            <label class="check-item flex items-start gap-3 bg-surface-50 dark:bg-surface-900/40 rounded-xl px-4 py-3 cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-800/40 transition">
+              <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-surface-300 dark:border-surface-600 text-brand-500 focus:ring-brand-500">
+              <span class="text-sm text-surface-700 dark:text-surface-300">Cell-level security filters data by department</span>
+            </label>
+            <label class="check-item flex items-start gap-3 bg-surface-50 dark:bg-surface-900/40 rounded-xl px-4 py-3 cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-800/40 transition">
+              <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-surface-300 dark:border-surface-600 text-brand-500 focus:ring-brand-500">
+              <span class="text-sm text-surface-700 dark:text-surface-300">SSO works across multiple applications</span>
+            </label>
+            <label class="check-item flex items-start gap-3 bg-surface-50 dark:bg-surface-900/40 rounded-xl px-4 py-3 cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-800/40 transition">
+              <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-surface-300 dark:border-surface-600 text-brand-500 focus:ring-brand-500">
+              <span class="text-sm text-surface-700 dark:text-surface-300">Logout works properly (both Keycloak and Azure AD)</span>
+            </label>
+            <label class="check-item flex items-start gap-3 bg-surface-50 dark:bg-surface-900/40 rounded-xl px-4 py-3 cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-800/40 transition">
+              <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-surface-300 dark:border-surface-600 text-brand-500 focus:ring-brand-500">
+              <span class="text-sm text-surface-700 dark:text-surface-300">Token refresh works seamlessly</span>
+            </label>
+            <label class="check-item flex items-start gap-3 bg-surface-50 dark:bg-surface-900/40 rounded-xl px-4 py-3 cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-800/40 transition">
+              <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-surface-300 dark:border-surface-600 text-brand-500 focus:ring-brand-500">
+              <span class="text-sm text-surface-700 dark:text-surface-300">Events are logged for audit trail</span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- =============== DATABASE SCHEMA =============== -->
+      <section id="schema" class="fade-section mb-16">
+        <div class="section-card bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/50 rounded-2xl p-6 md:p-10 shadow-sm">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-lg">🗄</div>
+            <div>
+              <h2 class="font-display font-800 text-2xl md:text-3xl">Database Schema</h2>
+              <p class="text-sm text-surface-500 dark:text-surface-400 font-mono">PostgreSQL tables for the document repository</p>
+            </div>
+          </div>
+
+          <button onclick="toggleDeepDive('schema-deep')" class="btn-glow inline-flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-display font-600 px-5 py-2.5 rounded-xl transition-all duration-300 mb-4">
+            <svg class="w-4 h-4 deep-arrow transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            View Full Schema SQL
+          </button>
+          <div id="schema-deep" class="deep-dive-content">
+            <div class="code-block bg-surface-900 dark:bg-surface-950 text-emerald-400 rounded-xl p-4 overflow-x-auto">
+              <pre><span class="text-surface-500">-- Documents table</span>
+CREATE TABLE documents (
+  id SERIAL PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  content TEXT,
+  owner_id VARCHAR(255) NOT NULL,
+  owner_email VARCHAR(255) NOT NULL,
+  department VARCHAR(100),
+  classification VARCHAR(50) DEFAULT 'internal',
+  is_public BOOLEAN DEFAULT false,
+  deleted BOOLEAN DEFAULT false,
+  deleted_at TIMESTAMP,
+  deleted_by VARCHAR(255),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_documents_owner ON documents(owner_id);
+CREATE INDEX idx_documents_department ON documents(department);
+CREATE INDEX idx_documents_classification ON documents(classification);
+
+<span class="text-surface-500">-- Document shares table</span>
+CREATE TABLE document_shares (
+  id SERIAL PRIMARY KEY,
+  document_id INTEGER REFERENCES documents(id),
+  shared_by VARCHAR(255) NOT NULL,
+  shared_with_email VARCHAR(255) NOT NULL,
+  permissions JSONB,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+<span class="text-surface-500">-- Audit log table</span>
+CREATE TABLE document_audit_log (
+  id SERIAL PRIMARY KEY,
+  document_id INTEGER REFERENCES documents(id),
+  action VARCHAR(50) NOT NULL,
+  user_id VARCHAR(255) NOT NULL,
+  user_email VARCHAR(255) NOT NULL,
+  timestamp TIMESTAMP DEFAULT NOW(),
+  details JSONB
+);
+
+CREATE INDEX idx_audit_document ON document_audit_log(document_id);
+CREATE INDEX idx_audit_user ON document_audit_log(user_id);
+CREATE INDEX idx_audit_timestamp ON document_audit_log(timestamp);
+
+<span class="text-surface-500">-- User profiles table</span>
+CREATE TABLE user_profiles (
+  user_id VARCHAR(255) PRIMARY KEY,
+  preferences JSONB,
+  bio TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);</pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ===== FOOTER ===== -->
+<footer class="border-t border-surface-200 dark:border-surface-700/40 bg-white/50 dark:bg-surface-950/50 backdrop-blur-sm py-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 text-center">
+    <p class="text-xs text-surface-400 dark:text-surface-500 font-mono">Azure AD (Entra ID) + Keycloak Federation Guide · OIDC · OAuth2 · RBAC · Cell-Level Security · SSO</p>
+  </div>
+</footer>
+
+<!-- ===== BACK TO TOP ===== -->
+<button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" class="fixed bottom-6 right-6 w-10 h-10 rounded-full bg-brand-500 text-white shadow-lg shadow-brand-500/30 flex items-center justify-center opacity-0 translate-y-4 transition-all duration-300 hover:bg-brand-600 z-40" aria-label="Back to top">
+  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+</button>
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+// === TABLE OF CONTENTS DATA ===
+const tocSections = [
+  { id: 'architecture', label: 'Architecture Overview', icon: '🏗' },
+  { id: 'phase1', label: 'P1 · Azure AD Setup', icon: '☁️' },
+  { id: 'phase2', label: 'P2 · Keycloak Setup', icon: '🔑' },
+  { id: 'phase3', label: 'P3 · Federation', icon: '🔄' },
+  { id: 'phase4', label: 'P4 · RBAC Setup', icon: '🛡' },
+  { id: 'phase5', label: 'P5 · Cell-Level Security', icon: '🔬' },
+  { id: 'phase6', label: 'P6 · SSO Configuration', icon: '🔗' },
+  { id: 'phase7', label: 'P7 · App Implementation', icon: '💻' },
+  { id: 'phase8', label: 'P8 · Advanced Security', icon: '🔒' },
+  { id: 'phase9', label: 'P9 · Monitoring', icon: '📊' },
+  { id: 'access-matrix', label: 'Access Matrix', icon: '📋' },
+  { id: 'security', label: 'Best Practices', icon: '🔐' },
+  { id: 'checklist', label: 'Testing Checklist', icon: '✓' },
+  { id: 'schema', label: 'Database Schema', icon: '🗄' },
+];
+
+// === BUILD TOC ===
+function buildToc(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = tocSections.map(s =>
+    `<a href="#${s.id}" class="toc-link flex items-center gap-2.5 px-3 py-2 text-xs rounded-lg border-l-2 border-transparent text-surface-600 dark:text-surface-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-surface-100 dark:hover:bg-surface-800/40 transition-all duration-200" data-target="${s.id}" onclick="onTocClick(event)">
+      <span class="text-[0.7rem]">${s.icon}</span>
+      <span class="font-display font-500">${s.label}</span>
+    </a>`
+  ).join('');
+}
+buildToc('toc-nav');
+buildToc('mobile-toc-links');
+
+function onTocClick(e) {
+  closeMobileToc();
+}
+
+// === DARK MODE TOGGLE ===
+const html = document.documentElement;
+const toggle = document.getElementById('theme-toggle');
+const knob = document.getElementById('theme-knob');
+const sunIcon = document.getElementById('sun-icon');
+const moonIcon = document.getElementById('moon-icon');
+
+function setTheme(dark) {
+  if (dark) {
+    html.classList.add('dark');
+    knob.style.transform = 'translateX(28px)';
+    sunIcon.classList.add('hidden');
+    moonIcon.classList.remove('hidden');
+    localStorage.setItem('theme', 'dark');
+  } else {
+    html.classList.remove('dark');
+    knob.style.transform = 'translateX(0)';
+    sunIcon.classList.remove('hidden');
+    moonIcon.classList.add('hidden');
+    localStorage.setItem('theme', 'light');
+  }
+}
+
+// Init theme
+const savedTheme = localStorage.getItem('theme');
+const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+setTheme(savedTheme === 'dark' || (!savedTheme && prefersDark));
+
+toggle.addEventListener('click', () => {
+  setTheme(!html.classList.contains('dark'));
+});
+
+// === PROGRESS BAR ===
+const progressBar = document.getElementById('progress-bar');
+function updateProgress() {
+  const scrollTop = window.scrollY;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+  progressBar.style.width = progress + '%';
+}
+
+// === ACTIVE TOC TRACKING ===
+function updateActiveToc() {
+  const scrollY = window.scrollY + 120;
+  let activeId = tocSections[0].id;
+  for (const section of tocSections) {
+    const el = document.getElementById(section.id);
+    if (el && el.offsetTop <= scrollY) {
+      activeId = section.id;
+    }
+  }
+  document.querySelectorAll('.toc-link').forEach(link => {
+    link.classList.toggle('active', link.dataset.target === activeId);
+  });
+}
+
+// === BACK TO TOP BUTTON ===
+const backToTop = document.getElementById('back-to-top');
+function updateBackToTop() {
+  if (window.scrollY > 600) {
+    backToTop.style.opacity = '1';
+    backToTop.style.transform = 'translateY(0)';
+  } else {
+    backToTop.style.opacity = '0';
+    backToTop.style.transform = 'translateY(16px)';
+  }
+}
+
+// === FADE-IN ON SCROLL ===
+const fadeSections = document.querySelectorAll('.fade-section');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+fadeSections.forEach(el => observer.observe(el));
+
+// === SCROLL EVENT ===
+let ticking = false;
+window.addEventListener('scroll', () => {
+  if (!ticking) {
+    requestAnimationFrame(() => {
+      updateProgress();
+      updateActiveToc();
+      updateBackToTop();
+      ticking = false;
+    });
+    ticking = true;
+  }
+});
+
+// === DEEP DIVE TOGGLE ===
+function toggleDeepDive(id) {
+  const el = document.getElementById(id);
+  const btn = el.previousElementSibling;
+  const arrow = btn.querySelector('.deep-arrow');
+  el.classList.toggle('expanded');
+  if (el.classList.contains('expanded')) {
+    arrow.style.transform = 'rotate(180deg)';
+  } else {
+    arrow.style.transform = 'rotate(0deg)';
+  }
+}
+
+// === MOBILE TOC ===
+const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+const mobileToc = document.getElementById('mobile-toc');
+const mobileTocOverlay = document.getElementById('mobile-toc-overlay');
+
+mobileMenuBtn.addEventListener('click', () => {
+  mobileToc.classList.add('open');
+  mobileTocOverlay.classList.remove('hidden');
+});
+
+function closeMobileToc() {
+  mobileToc.classList.remove('open');
+  mobileTocOverlay.classList.add('hidden');
+}
+
+// Init
+updateProgress();
+updateActiveToc();
+</script>
+</body>
+</html>
