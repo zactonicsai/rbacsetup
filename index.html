@@ -1933,6 +1933,622 @@ app.put(<span class="text-emerald-400">'/api/docs/:id'</span>,
         </div>
       </section>
 
+      <!-- =============== COMPREHENSIVE AUDITING =============== -->
+      <section id="auditing" class="fade-section mb-16">
+        <div class="section-card bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/50 rounded-2xl p-6 md:p-10 shadow-sm">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white text-lg">&#x1F4DD;</div>
+            <div>
+              <h2 class="font-display font-800 text-2xl md:text-3xl">Comprehensive Auditing</h2>
+              <p class="text-sm text-surface-500 dark:text-surface-400 font-mono">Full CRUD &amp; role action audit trail</p>
+            </div>
+          </div>
+
+          <p class="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-6">Every action in a classified enterprise system must be recorded, attributable, and reviewable. This section covers a complete audit framework that logs all Create, Read, Update, and Delete operations across every role, together with authentication events, role changes, classification gate decisions, and NTK approvals.</p>
+
+          <!-- Why Auditing Matters - Hero Card -->
+          <div class="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl p-5 mb-6">
+            <h3 class="font-display font-bold text-amber-800 dark:text-amber-300 text-base mb-3">&#x26A0;&#xFE0F; Why Every Operation Must Be Audited</h3>
+            <div class="grid sm:grid-cols-2 gap-3">
+              <div class="flex items-start gap-2">
+                <span class="text-amber-600 dark:text-amber-400 mt-0.5 shrink-0">&#x2714;&#xFE0F;</span>
+                <p class="text-xs text-surface-700 dark:text-surface-300 leading-relaxed"><strong>Regulatory Compliance</strong> &mdash; SOX, HIPAA, GDPR, and FedRAMP all mandate immutable audit trails for data access. Without logging, your organization fails compliance audits.</p>
+              </div>
+              <div class="flex items-start gap-2">
+                <span class="text-amber-600 dark:text-amber-400 mt-0.5 shrink-0">&#x2714;&#xFE0F;</span>
+                <p class="text-xs text-surface-700 dark:text-surface-300 leading-relaxed"><strong>Breach Detection</strong> &mdash; Audit logs are the first artifact forensic teams analyze. A missing or incomplete trail means an incident cannot be reconstructed.</p>
+              </div>
+              <div class="flex items-start gap-2">
+                <span class="text-amber-600 dark:text-amber-400 mt-0.5 shrink-0">&#x2714;&#xFE0F;</span>
+                <p class="text-xs text-surface-700 dark:text-surface-300 leading-relaxed"><strong>Insider Threat Deterrence</strong> &mdash; When users know every action is recorded and reviewed, unauthorized access attempts drop dramatically.</p>
+              </div>
+              <div class="flex items-start gap-2">
+                <span class="text-amber-600 dark:text-amber-400 mt-0.5 shrink-0">&#x2714;&#xFE0F;</span>
+                <p class="text-xs text-surface-700 dark:text-surface-300 leading-relaxed"><strong>Non-Repudiation</strong> &mdash; Cryptographically linked log entries ensure a user cannot deny performing an action. Timestamps, IPs, and JWT fingerprints make each record provable.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Audit Event Categories -->
+          <h3 class="font-display font-bold text-base mb-3">Audit Event Categories</h3>
+          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+            <div class="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 rounded-xl p-4">
+              <h4 class="font-display font-bold text-emerald-700 dark:text-emerald-300 text-sm mb-2">&#x1F4C4; CRUD Operations</h4>
+              <ul class="text-xs text-surface-600 dark:text-surface-300 space-y-1">
+                <li><code class="text-emerald-600 dark:text-emerald-400">CREATE</code> &mdash; Document created, with owner, department, classification level</li>
+                <li><code class="text-emerald-600 dark:text-emerald-400">READ</code> &mdash; Document accessed, including partial reads and search-result exposures</li>
+                <li><code class="text-emerald-600 dark:text-emerald-400">UPDATE</code> &mdash; Field-level diff recorded (old value &rarr; new value)</li>
+                <li><code class="text-emerald-600 dark:text-emerald-400">DELETE</code> &mdash; Soft-delete recorded; hard-deletes require executive approval and double-log</li>
+              </ul>
+            </div>
+            <div class="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/40 rounded-xl p-4">
+              <h4 class="font-display font-bold text-blue-700 dark:text-blue-300 text-sm mb-2">&#x1F6E1;&#xFE0F; Role &amp; Access Events</h4>
+              <ul class="text-xs text-surface-600 dark:text-surface-300 space-y-1">
+                <li><code class="text-blue-600 dark:text-blue-400">ROLE_ASSIGNED</code> &mdash; User granted a role, by whom, effective date</li>
+                <li><code class="text-blue-600 dark:text-blue-400">ROLE_REVOKED</code> &mdash; Role removed, reason, revoking authority</li>
+                <li><code class="text-blue-600 dark:text-blue-400">ROLE_ESCALATED</code> &mdash; Temporary privilege elevation with TTL</li>
+                <li><code class="text-blue-600 dark:text-blue-400">PERMISSION_DENIED</code> &mdash; Failed access attempt logged with full context</li>
+              </ul>
+            </div>
+            <div class="bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800/40 rounded-xl p-4">
+              <h4 class="font-display font-bold text-violet-700 dark:text-violet-300 text-sm mb-2">&#x1F510; Classification &amp; NTK Events</h4>
+              <ul class="text-xs text-surface-600 dark:text-surface-300 space-y-1">
+                <li><code class="text-violet-600 dark:text-violet-400">CLASSIFICATION_CHECK</code> &mdash; Gate 2 evaluation result (pass/fail)</li>
+                <li><code class="text-violet-600 dark:text-violet-400">NTK_REQUESTED</code> &mdash; Need-to-know approval initiated</li>
+                <li><code class="text-violet-600 dark:text-violet-400">NTK_APPROVED</code> &mdash; Approval granted with CRUD scope and expiry</li>
+                <li><code class="text-violet-600 dark:text-violet-400">NTK_DENIED</code> &mdash; Approval rejected, reason recorded</li>
+                <li><code class="text-violet-600 dark:text-violet-400">NTK_EXPIRED</code> &mdash; Automatic revocation at expiry timestamp</li>
+              </ul>
+            </div>
+            <div class="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/40 rounded-xl p-4">
+              <h4 class="font-display font-bold text-rose-700 dark:text-rose-300 text-sm mb-2">&#x1F512; Authentication Events</h4>
+              <ul class="text-xs text-surface-600 dark:text-surface-300 space-y-1">
+                <li><code class="text-rose-600 dark:text-rose-400">LOGIN_SUCCESS</code> &mdash; SSO session created, IdP source, MFA status</li>
+                <li><code class="text-rose-600 dark:text-rose-400">LOGIN_FAILED</code> &mdash; Failed attempt with IP, user-agent, failure reason</li>
+                <li><code class="text-rose-600 dark:text-rose-400">LOGOUT</code> &mdash; Session terminated, duration, trigger (user/timeout/admin)</li>
+                <li><code class="text-rose-600 dark:text-rose-400">TOKEN_REFRESHED</code> &mdash; Refresh token rotation event</li>
+              </ul>
+            </div>
+            <div class="bg-cyan-50 dark:bg-cyan-950/30 border border-cyan-200 dark:border-cyan-800/40 rounded-xl p-4">
+              <h4 class="font-display font-bold text-cyan-700 dark:text-cyan-300 text-sm mb-2">&#x1F4E4; Share &amp; Export Events</h4>
+              <ul class="text-xs text-surface-600 dark:text-surface-300 space-y-1">
+                <li><code class="text-cyan-600 dark:text-cyan-400">DOCUMENT_SHARED</code> &mdash; Who shared, with whom, permission scope</li>
+                <li><code class="text-cyan-600 dark:text-cyan-400">SHARE_REVOKED</code> &mdash; Sharing permission removed</li>
+                <li><code class="text-cyan-600 dark:text-cyan-400">DOCUMENT_EXPORTED</code> &mdash; Download or print event with format</li>
+                <li><code class="text-cyan-600 dark:text-cyan-400">BULK_EXPORT</code> &mdash; Mass data export flagged for review</li>
+              </ul>
+            </div>
+            <div class="bg-surface-50 dark:bg-surface-900/40 border border-surface-200 dark:border-surface-700/40 rounded-xl p-4">
+              <h4 class="font-display font-bold text-surface-700 dark:text-surface-300 text-sm mb-2">&#x2699;&#xFE0F; System &amp; Admin Events</h4>
+              <ul class="text-xs text-surface-600 dark:text-surface-300 space-y-1">
+                <li><code class="text-surface-600 dark:text-surface-400">POLICY_CHANGED</code> &mdash; RLS policy or Keycloak policy modified</li>
+                <li><code class="text-surface-600 dark:text-surface-400">SCHEMA_ALTERED</code> &mdash; Database schema change detected</li>
+                <li><code class="text-surface-600 dark:text-surface-400">CONFIG_UPDATED</code> &mdash; System configuration change with diff</li>
+                <li><code class="text-surface-600 dark:text-surface-400">AUDIT_LOG_ACCESSED</code> &mdash; Meta-audit: who reviewed the audit logs</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Audit Flow Visualization -->
+          <h3 class="font-display font-bold text-base mb-3">Audit Trail Flow</h3>
+          <div class="bg-surface-50 dark:bg-surface-900/40 border border-surface-200 dark:border-surface-700/40 rounded-xl p-5 mb-6">
+            <div class="flex flex-wrap items-center justify-center gap-2 text-xs font-mono">
+              <div class="bg-blue-100 dark:bg-blue-900/40 border border-blue-300 dark:border-blue-700 rounded-lg px-3 py-2 text-center">
+                <div class="font-bold text-blue-700 dark:text-blue-300">User Action</div>
+                <div class="text-blue-600 dark:text-blue-400 text-[0.65rem]">CRUD / Auth / Role</div>
+              </div>
+              <span class="text-surface-400">&rarr;</span>
+              <div class="bg-amber-100 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-700 rounded-lg px-3 py-2 text-center">
+                <div class="font-bold text-amber-700 dark:text-amber-300">Middleware</div>
+                <div class="text-amber-600 dark:text-amber-400 text-[0.65rem]">Capture context</div>
+              </div>
+              <span class="text-surface-400">&rarr;</span>
+              <div class="bg-emerald-100 dark:bg-emerald-900/40 border border-emerald-300 dark:border-emerald-700 rounded-lg px-3 py-2 text-center">
+                <div class="font-bold text-emerald-700 dark:text-emerald-300">Audit Logger</div>
+                <div class="text-emerald-600 dark:text-emerald-400 text-[0.65rem]">Enrich + validate</div>
+              </div>
+              <span class="text-surface-400">&rarr;</span>
+              <div class="bg-violet-100 dark:bg-violet-900/40 border border-violet-300 dark:border-violet-700 rounded-lg px-3 py-2 text-center">
+                <div class="font-bold text-violet-700 dark:text-violet-300">Immutable Store</div>
+                <div class="text-violet-600 dark:text-violet-400 text-[0.65rem]">append-only table</div>
+              </div>
+              <span class="text-surface-400">&rarr;</span>
+              <div class="bg-rose-100 dark:bg-rose-900/40 border border-rose-300 dark:border-rose-700 rounded-lg px-3 py-2 text-center">
+                <div class="font-bold text-rose-700 dark:text-rose-300">SIEM / Alerts</div>
+                <div class="text-rose-600 dark:text-rose-400 text-[0.65rem]">Real-time monitor</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Audit by Role Matrix -->
+          <h3 class="font-display font-bold text-base mb-3">What Gets Audited Per Role</h3>
+          <div class="overflow-x-auto mb-6">
+            <table class="w-full text-xs border border-surface-200 dark:border-surface-700 rounded-xl overflow-hidden">
+              <thead>
+                <tr class="bg-surface-100 dark:bg-surface-800">
+                  <th class="px-3 py-2 text-left font-display font-bold text-surface-700 dark:text-surface-300">Audit Event</th>
+                  <th class="px-3 py-2 text-center font-display font-bold text-surface-700 dark:text-surface-300">Employee</th>
+                  <th class="px-3 py-2 text-center font-display font-bold text-surface-700 dark:text-surface-300">Manager</th>
+                  <th class="px-3 py-2 text-center font-display font-bold text-surface-700 dark:text-surface-300">Director</th>
+                  <th class="px-3 py-2 text-center font-display font-bold text-surface-700 dark:text-surface-300">Executive</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-surface-100 dark:divide-surface-800">
+                <tr><td class="px-3 py-2 font-mono text-emerald-600 dark:text-emerald-400">CREATE document</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td></tr>
+                <tr class="bg-surface-50 dark:bg-surface-900/20"><td class="px-3 py-2 font-mono text-emerald-600 dark:text-emerald-400">READ document</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td></tr>
+                <tr><td class="px-3 py-2 font-mono text-emerald-600 dark:text-emerald-400">UPDATE document</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td></tr>
+                <tr class="bg-surface-50 dark:bg-surface-900/20"><td class="px-3 py-2 font-mono text-emerald-600 dark:text-emerald-400">DELETE document</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td></tr>
+                <tr><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">ROLE_ASSIGNED</td><td class="px-3 py-2 text-center">&mdash;</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td></tr>
+                <tr class="bg-surface-50 dark:bg-surface-900/20"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">ROLE_REVOKED</td><td class="px-3 py-2 text-center">&mdash;</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td></tr>
+                <tr><td class="px-3 py-2 font-mono text-violet-600 dark:text-violet-400">NTK_APPROVED</td><td class="px-3 py-2 text-center">&mdash;</td><td class="px-3 py-2 text-center">&mdash;</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td></tr>
+                <tr class="bg-surface-50 dark:bg-surface-900/20"><td class="px-3 py-2 font-mono text-violet-600 dark:text-violet-400">CLASSIFICATION_CHECK</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td></tr>
+                <tr><td class="px-3 py-2 font-mono text-rose-600 dark:text-rose-400">LOGIN / LOGOUT</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td></tr>
+                <tr class="bg-surface-50 dark:bg-surface-900/20"><td class="px-3 py-2 font-mono text-rose-600 dark:text-rose-400">PERMISSION_DENIED</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td></tr>
+                <tr><td class="px-3 py-2 font-mono text-cyan-600 dark:text-cyan-400">DOCUMENT_SHARED</td><td class="px-3 py-2 text-center">&mdash;</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td></tr>
+                <tr class="bg-surface-50 dark:bg-surface-900/20"><td class="px-3 py-2 font-mono text-cyan-600 dark:text-cyan-400">DOCUMENT_EXPORTED</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td></tr>
+                <tr><td class="px-3 py-2 font-mono text-surface-600 dark:text-surface-400">AUDIT_LOG_ACCESSED</td><td class="px-3 py-2 text-center">&mdash;</td><td class="px-3 py-2 text-center">&mdash;</td><td class="px-3 py-2 text-center">&#x2705;</td><td class="px-3 py-2 text-center">&#x2705;</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Deep Dive Button -->
+          <button onclick="toggleDeepDive('auditing-deep')" class="btn-glow inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-display font-600 px-5 py-2.5 rounded-xl transition-all duration-300">
+            <svg class="w-4 h-4 deep-arrow transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            Deep Dive: Audit Implementation &amp; Architecture
+          </button>
+          <div id="auditing-deep" class="deep-dive-content mt-6">
+            <div class="deep-dive-panel bg-gradient-to-b from-amber-50/80 to-orange-50/80 dark:from-amber-950/20 dark:to-orange-950/20 border border-amber-200 dark:border-amber-800/40 rounded-xl p-6 space-y-5" data-accent="amber">
+
+              <!-- Deep Dive 1: Audit Database Schema -->
+              <div>
+                <h4 class="font-display font-bold text-amber-700 dark:text-amber-300 mb-2">&#x1F5C4;&#xFE0F; Audit Database Schema</h4>
+                <p class="text-xs text-surface-600 dark:text-surface-300 mb-3">The audit system uses two core tables: an append-only event log and a separate session tracking table. Both are protected by PostgreSQL policies that prevent UPDATE and DELETE operations.</p>
+                <div class="code-block bg-surface-900 dark:bg-surface-950 text-emerald-400 rounded-xl p-4 overflow-x-auto text-xs">
+                  <pre><span class="text-surface-500">-- Comprehensive audit event log (append-only)</span>
+CREATE TABLE audit_events (
+  id            BIGSERIAL PRIMARY KEY,
+  event_id      UUID DEFAULT gen_random_uuid() UNIQUE,
+  event_type    VARCHAR(50) NOT NULL,
+  category      VARCHAR(30) NOT NULL,
+  severity      VARCHAR(10) DEFAULT 'INFO',
+  timestamp     TIMESTAMPTZ DEFAULT NOW(),
+
+  <span class="text-surface-500">-- Actor</span>
+  user_id       VARCHAR(255) NOT NULL,
+  user_email    VARCHAR(255),
+  user_role     VARCHAR(50),
+  ip_address    INET,
+  user_agent    TEXT,
+  session_id    VARCHAR(255),
+
+  <span class="text-surface-500">-- Target resource</span>
+  resource_type VARCHAR(50),
+  resource_id   VARCHAR(255),
+  resource_name VARCHAR(255),
+
+  <span class="text-surface-500">-- Security gates</span>
+  classification_level  INTEGER,
+  classification_result VARCHAR(10),
+  ntk_project_code      VARCHAR(50),
+  ntk_result            VARCHAR(10),
+  role_gate_result      VARCHAR(10),
+
+  <span class="text-surface-500">-- Payload</span>
+  action_detail JSONB,
+  old_values    JSONB,
+  new_values    JSONB,
+  metadata      JSONB
+);
+
+<span class="text-surface-500">-- Performance indexes</span>
+CREATE INDEX idx_audit_type     ON audit_events(event_type);
+CREATE INDEX idx_audit_user     ON audit_events(user_id);
+CREATE INDEX idx_audit_ts       ON audit_events(timestamp);
+CREATE INDEX idx_audit_resource ON audit_events(resource_type, resource_id);
+CREATE INDEX idx_audit_severity ON audit_events(severity);
+CREATE INDEX idx_audit_category ON audit_events(category);
+CREATE INDEX idx_audit_session  ON audit_events(session_id);
+CREATE INDEX idx_audit_user_ts  ON audit_events(user_id, timestamp DESC);
+
+<span class="text-surface-500">-- Prevent tampering: revoke UPDATE/DELETE on audit table</span>
+REVOKE UPDATE, DELETE ON audit_events FROM app_user;
+REVOKE UPDATE, DELETE ON audit_events FROM app_role;
+
+<span class="text-surface-500">-- Session tracking table</span>
+CREATE TABLE audit_sessions (
+  session_id    VARCHAR(255) PRIMARY KEY,
+  user_id       VARCHAR(255) NOT NULL,
+  user_email    VARCHAR(255),
+  idp_source    VARCHAR(50),
+  login_at      TIMESTAMPTZ DEFAULT NOW(),
+  logout_at     TIMESTAMPTZ,
+  duration_sec  INTEGER,
+  mfa_used      BOOLEAN DEFAULT false,
+  ip_address    INET,
+  user_agent    TEXT
+);</pre>
+                </div>
+              </div>
+
+              <!-- Deep Dive 2: Express.js Audit Middleware -->
+              <div>
+                <h4 class="font-display font-bold text-amber-700 dark:text-amber-300 mb-2">&#x1F6E0;&#xFE0F; Express.js Audit Middleware</h4>
+                <p class="text-xs text-surface-600 dark:text-surface-300 mb-3">A centralized audit middleware captures every request automatically. It enriches log entries with JWT claims, IP context, and gate results before writing to the append-only audit table.</p>
+                <div class="code-block bg-surface-900 dark:bg-surface-950 text-emerald-400 rounded-xl p-4 overflow-x-auto text-xs">
+                  <pre><span class="text-surface-500">// audit-logger.js &mdash; Centralized audit service</span>
+const { Pool } = require('pg');
+const pool = new Pool();
+
+const SEVERITY = {
+  CREATE: 'INFO',  READ: 'INFO',  UPDATE: 'WARN',
+  DELETE: 'WARN',  PERMISSION_DENIED: 'ALERT',
+  ROLE_ASSIGNED: 'WARN',  ROLE_REVOKED: 'WARN',
+  LOGIN_FAILED: 'ALERT',  NTK_DENIED: 'ALERT',
+  BULK_EXPORT: 'ALERT',   AUDIT_LOG_ACCESSED: 'WARN'
+};
+
+async function logAuditEvent({
+  eventType, category, userId, userEmail,
+  userRole, ipAddress, userAgent, sessionId,
+  resourceType, resourceId, resourceName,
+  classificationLevel, classificationResult,
+  ntkProjectCode, ntkResult, roleGateResult,
+  actionDetail, oldValues, newValues, metadata
+}) {
+  const severity = SEVERITY[eventType] || 'INFO';
+
+  await pool.query(`
+    INSERT INTO audit_events (
+      event_type, category, severity,
+      user_id, user_email, user_role,
+      ip_address, user_agent, session_id,
+      resource_type, resource_id, resource_name,
+      classification_level, classification_result,
+      ntk_project_code, ntk_result, role_gate_result,
+      action_detail, old_values, new_values, metadata
+    ) VALUES (
+      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
+      $11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21
+    )`, [ eventType, category, severity,
+      userId, userEmail, userRole,
+      ipAddress, userAgent, sessionId,
+      resourceType, resourceId, resourceName,
+      classificationLevel, classificationResult,
+      ntkProjectCode, ntkResult, roleGateResult,
+      JSON.stringify(actionDetail),
+      JSON.stringify(oldValues),
+      JSON.stringify(newValues),
+      JSON.stringify(metadata)
+    ]);
+
+  <span class="text-surface-500">// Alert on high-severity events</span>
+  if (severity === 'ALERT') {
+    await triggerSecurityAlert({ eventType, userId, resourceId });
+  }
+}
+
+module.exports = { logAuditEvent };</pre>
+                </div>
+              </div>
+
+              <!-- Deep Dive 3: Request-Level Middleware -->
+              <div>
+                <h4 class="font-display font-bold text-amber-700 dark:text-amber-300 mb-2">&#x1F4E1; Request-Level Audit Middleware</h4>
+                <p class="text-xs text-surface-600 dark:text-surface-300 mb-3">Wrap every route with an audit middleware that automatically captures the actor, action, and outcome for every HTTP request.</p>
+                <div class="code-block bg-surface-900 dark:bg-surface-950 text-emerald-400 rounded-xl p-4 overflow-x-auto text-xs">
+                  <pre><span class="text-surface-500">// audit-middleware.js</span>
+const { logAuditEvent } = require('./audit-logger');
+
+const HTTP_TO_CRUD = {
+  GET: 'READ', POST: 'CREATE',
+  PUT: 'UPDATE', PATCH: 'UPDATE', DELETE: 'DELETE'
+};
+
+function auditMiddleware(resourceType) {
+  return async (req, res, next) =&gt; {
+    const startTime = Date.now();
+    const originalJson = res.json.bind(res);
+
+    res.json = async (body) =&gt; {
+      const duration = Date.now() - startTime;
+      const eventType = HTTP_TO_CRUD[req.method] || req.method;
+
+      await logAuditEvent({
+        eventType,
+        category: 'DATA_ACCESS',
+        userId: req.user?.sub,
+        userEmail: req.user?.email,
+        userRole: req.user?.realm_role,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+        sessionId: req.user?.session_state,
+        resourceType,
+        resourceId: req.params.id || body?.id,
+        resourceName: body?.title,
+        classificationLevel: req.classificationLevel,
+        classificationResult: req.classificationPassed
+          ? 'PASS' : 'FAIL',
+        ntkProjectCode: req.ntkProjectCode,
+        ntkResult: req.ntkPassed ? 'PASS' : 'FAIL',
+        roleGateResult: req.rolePassed ? 'PASS' : 'FAIL',
+        actionDetail: {
+          method: req.method,
+          path: req.originalUrl,
+          statusCode: res.statusCode,
+          durationMs: duration
+        },
+        oldValues: req.previousValues || null,
+        newValues: req.method !== 'GET' ? req.body : null,
+        metadata: { correlationId: req.headers['x-request-id'] }
+      });
+
+      return originalJson(body);
+    };
+
+    next();
+  };
+}
+
+<span class="text-surface-500">// Usage in routes</span>
+app.get('/api/documents/:id',
+  authenticate, requireRole('employee'),
+  requireClassifiedAccess('read'),
+  auditMiddleware('document'),
+  getDocumentHandler
+);
+
+app.put('/api/documents/:id',
+  authenticate, requireRole('manager'),
+  requireClassifiedAccess('update'),
+  captureOldValues('documents'),
+  auditMiddleware('document'),
+  updateDocumentHandler
+);</pre>
+                </div>
+              </div>
+
+              <!-- Deep Dive 4: PostgreSQL Trigger-Based Auditing -->
+              <div>
+                <h4 class="font-display font-bold text-amber-700 dark:text-amber-300 mb-2">&#x1F3AF; PostgreSQL Trigger-Based Auditing</h4>
+                <p class="text-xs text-surface-600 dark:text-surface-300 mb-3">Defense-in-depth: even if application-level audit middleware is bypassed, database triggers guarantee that every INSERT, UPDATE, and DELETE on the documents table is captured.</p>
+                <div class="code-block bg-surface-900 dark:bg-surface-950 text-emerald-400 rounded-xl p-4 overflow-x-auto text-xs">
+                  <pre><span class="text-surface-500">-- Database trigger for automatic CRUD auditing</span>
+CREATE OR REPLACE FUNCTION fn_audit_documents()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO audit_events (
+    event_type, category, severity,
+    user_id, resource_type, resource_id,
+    old_values, new_values, metadata
+  ) VALUES (
+    TG_OP, 'DB_TRIGGER',
+    CASE WHEN TG_OP = 'DELETE' THEN 'WARN' ELSE 'INFO' END,
+    current_setting('app.current_user_id', true),
+    'document', COALESCE(NEW.id, OLD.id)::TEXT,
+    CASE WHEN TG_OP IN ('UPDATE','DELETE')
+         THEN row_to_json(OLD) END,
+    CASE WHEN TG_OP IN ('INSERT','UPDATE')
+         THEN row_to_json(NEW) END,
+    jsonb_build_object(
+      'trigger', TG_NAME, 'table', TG_TABLE_NAME,
+      'session_user', session_user, 'timestamp', NOW()
+    )
+  );
+  RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER trg_audit_documents_insert
+  AFTER INSERT ON documents
+  FOR EACH ROW EXECUTE FUNCTION fn_audit_documents();
+CREATE TRIGGER trg_audit_documents_update
+  AFTER UPDATE ON documents
+  FOR EACH ROW EXECUTE FUNCTION fn_audit_documents();
+CREATE TRIGGER trg_audit_documents_delete
+  AFTER DELETE ON documents
+  FOR EACH ROW EXECUTE FUNCTION fn_audit_documents();
+
+<span class="text-surface-500">-- Audit trigger for role changes</span>
+CREATE OR REPLACE FUNCTION fn_audit_role_changes()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO audit_events (
+    event_type, category, severity,
+    user_id, resource_type, resource_id,
+    old_values, new_values
+  ) VALUES (
+    CASE WHEN TG_OP = 'INSERT' THEN 'ROLE_ASSIGNED'
+         WHEN TG_OP = 'DELETE' THEN 'ROLE_REVOKED'
+         ELSE 'ROLE_UPDATED' END,
+    'ROLE_MANAGEMENT', 'WARN',
+    current_setting('app.current_user_id', true),
+    'user_role', COALESCE(NEW.user_id, OLD.user_id),
+    CASE WHEN TG_OP != 'INSERT' THEN row_to_json(OLD) END,
+    CASE WHEN TG_OP != 'DELETE' THEN row_to_json(NEW) END
+  );
+  RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+<span class="text-surface-500">-- Audit trigger for NTK approval changes</span>
+CREATE OR REPLACE FUNCTION fn_audit_ntk_changes()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO audit_events (
+    event_type, category, severity,
+    user_id, resource_type, resource_id,
+    ntk_project_code, ntk_result,
+    old_values, new_values
+  ) VALUES (
+    CASE WHEN TG_OP = 'INSERT' THEN 'NTK_REQUESTED'
+         WHEN NEW.status = 'approved' THEN 'NTK_APPROVED'
+         WHEN NEW.status = 'denied' THEN 'NTK_DENIED'
+         ELSE 'NTK_UPDATED' END,
+    'NTK_MANAGEMENT',
+    CASE WHEN NEW.status = 'denied' THEN 'ALERT' ELSE 'WARN' END,
+    current_setting('app.current_user_id', true),
+    'ntk_approval', COALESCE(NEW.user_id, OLD.user_id),
+    COALESCE(NEW.project_code, OLD.project_code), NEW.status,
+    CASE WHEN TG_OP != 'INSERT' THEN row_to_json(OLD) END,
+    row_to_json(NEW)
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;</pre>
+                </div>
+              </div>
+
+              <!-- Deep Dive 5: Audit Querying & Reporting -->
+              <div>
+                <h4 class="font-display font-bold text-amber-700 dark:text-amber-300 mb-2">&#x1F4CA; Audit Querying &amp; Reporting</h4>
+                <p class="text-xs text-surface-600 dark:text-surface-300 mb-3">Pre-built queries for compliance reporting, anomaly detection, and security reviews that auditors and security teams use during assessments.</p>
+                <div class="code-block bg-surface-900 dark:bg-surface-950 text-emerald-400 rounded-xl p-4 overflow-x-auto text-xs">
+                  <pre><span class="text-surface-500">-- 1. All CRUD operations by a specific user (last 30 days)</span>
+SELECT event_type, resource_type, resource_id,
+       timestamp, action_detail, classification_result
+FROM   audit_events
+WHERE  user_id = $1
+  AND  category = 'DATA_ACCESS'
+  AND  timestamp &gt; NOW() - INTERVAL '30 days'
+ORDER BY timestamp DESC;
+
+<span class="text-surface-500">-- 2. All denied access attempts (security review)</span>
+SELECT user_id, user_email, user_role, event_type,
+       resource_id, ip_address, classification_result,
+       ntk_result, role_gate_result, timestamp
+FROM   audit_events
+WHERE  severity = 'ALERT'
+  AND  (classification_result = 'FAIL'
+   OR   ntk_result = 'FAIL'
+   OR   role_gate_result = 'FAIL')
+ORDER BY timestamp DESC LIMIT 100;
+
+<span class="text-surface-500">-- 3. Role change history for compliance audit</span>
+SELECT event_type, user_id,
+       old_values-&gt;&gt;'role' AS previous_role,
+       new_values-&gt;&gt;'role' AS new_role,
+       metadata-&gt;&gt;'changed_by' AS changed_by, timestamp
+FROM   audit_events
+WHERE  category = 'ROLE_MANAGEMENT'
+ORDER BY timestamp DESC;
+
+<span class="text-surface-500">-- 4. Anomaly: users accessing data outside business hours</span>
+SELECT user_id, user_email, event_type,
+       resource_id, timestamp, ip_address
+FROM   audit_events
+WHERE  EXTRACT(HOUR FROM timestamp) NOT BETWEEN 7 AND 19
+  AND  event_type IN ('READ','UPDATE','DELETE')
+  AND  timestamp &gt; NOW() - INTERVAL '7 days'
+ORDER BY timestamp DESC;
+
+<span class="text-surface-500">-- 5. Executive summary: event counts by category</span>
+SELECT category, COUNT(*) AS total_events,
+       COUNT(*) FILTER (WHERE severity = 'ALERT') AS alerts,
+       COUNT(DISTINCT user_id) AS unique_users
+FROM   audit_events
+WHERE  timestamp &gt; NOW() - INTERVAL '24 hours'
+GROUP BY category ORDER BY alerts DESC;</pre>
+                </div>
+              </div>
+
+              <!-- Deep Dive 6: Keycloak Event Listener -->
+              <div>
+                <h4 class="font-display font-bold text-amber-700 dark:text-amber-300 mb-2">&#x1F511; Keycloak Event Listener Integration</h4>
+                <p class="text-xs text-surface-600 dark:text-surface-300 mb-3">Keycloak emits authentication and admin events natively. Configure the event listener to forward these into your centralized audit_events table for a single pane of glass.</p>
+                <div class="code-block bg-surface-900 dark:bg-surface-950 text-emerald-400 rounded-xl p-4 overflow-x-auto text-xs">
+                  <pre><span class="text-surface-500">// Keycloak Realm Settings &rarr; Events</span>
+<span class="text-surface-500">// Enable: Login Events + Admin Events</span>
+<span class="text-surface-500">// Event Listeners: jboss-logging, custom-audit-spi</span>
+
+Login Events:
+  LOGIN, LOGIN_ERROR, LOGOUT, REGISTER,
+  CODE_TO_TOKEN, CODE_TO_TOKEN_ERROR,
+  REFRESH_TOKEN, REFRESH_TOKEN_ERROR,
+  FEDERATED_IDENTITY_LINK
+
+Admin Events:
+  CREATE, UPDATE, DELETE (on Users, Roles,
+  Clients, Groups, Identity Providers)
+
+<span class="text-surface-500">// Custom SPI forwards to audit_events table:</span>
+public class AuditEventListener implements
+    EventListenerProvider {
+
+  @Override
+  public void onEvent(Event event) {
+    auditService.log(AuditEvent.builder()
+      .eventType(mapEventType(event.getType()))
+      .category("AUTHENTICATION")
+      .userId(event.getUserId())
+      .ipAddress(event.getIpAddress())
+      .sessionId(event.getSessionId())
+      .metadata(Map.of(
+        "realmId", event.getRealmId(),
+        "clientId", event.getClientId(),
+        "error", event.getError()
+      ))
+      .build());
+  }
+}</pre>
+                </div>
+              </div>
+
+              <!-- Deep Dive 7: How Auditing Helps -->
+              <div>
+                <h4 class="font-display font-bold text-amber-700 dark:text-amber-300 mb-2">&#x1F9E0; How Auditing Protects Your Organization</h4>
+                <div class="grid sm:grid-cols-2 gap-4">
+                  <div class="bg-white/60 dark:bg-surface-800/30 rounded-xl p-4 border border-amber-100 dark:border-amber-900/30">
+                    <h5 class="font-display font-bold text-sm text-amber-800 dark:text-amber-200 mb-2">Incident Response Acceleration</h5>
+                    <p class="text-xs text-surface-600 dark:text-surface-300 leading-relaxed">When a breach is detected, the audit trail answers: Who accessed what? When? From where? What data was viewed or modified? Mean Time to Identify (MTTI) drops from weeks to hours when audit data is comprehensive.</p>
+                  </div>
+                  <div class="bg-white/60 dark:bg-surface-800/30 rounded-xl p-4 border border-amber-100 dark:border-amber-900/30">
+                    <h5 class="font-display font-bold text-sm text-amber-800 dark:text-amber-200 mb-2">Privilege Creep Detection</h5>
+                    <p class="text-xs text-surface-600 dark:text-surface-300 leading-relaxed">Over time, users accumulate roles they no longer need. Audit logs reveal patterns: a user with a Manager role who never exercises manager-level operations is a candidate for downgrade.</p>
+                  </div>
+                  <div class="bg-white/60 dark:bg-surface-800/30 rounded-xl p-4 border border-amber-100 dark:border-amber-900/30">
+                    <h5 class="font-display font-bold text-sm text-amber-800 dark:text-amber-200 mb-2">Zero-Trust Verification</h5>
+                    <p class="text-xs text-surface-600 dark:text-surface-300 leading-relaxed">Auditing completes the zero-trust loop: authenticate, authorize, <strong>then verify</strong>. Every action is recorded and can be replayed to confirm that the three-gate model (Role + Classification + NTK) was enforced.</p>
+                  </div>
+                  <div class="bg-white/60 dark:bg-surface-800/30 rounded-xl p-4 border border-amber-100 dark:border-amber-900/30">
+                    <h5 class="font-display font-bold text-sm text-amber-800 dark:text-amber-200 mb-2">Legal &amp; Regulatory Shield</h5>
+                    <p class="text-xs text-surface-600 dark:text-surface-300 leading-relaxed">In litigation or regulatory investigation, complete audit trails demonstrate due diligence. They prove your organization enforced access controls, detected anomalies, and responded appropriately.</p>
+                  </div>
+                  <div class="bg-white/60 dark:bg-surface-800/30 rounded-xl p-4 border border-amber-100 dark:border-amber-900/30">
+                    <h5 class="font-display font-bold text-sm text-amber-800 dark:text-amber-200 mb-2">Behavioral Analytics Foundation</h5>
+                    <p class="text-xs text-surface-600 dark:text-surface-300 leading-relaxed">Audit data feeds UEBA systems. Machine learning models baseline normal patterns and flag deviations: an employee suddenly reading 500 classified documents at 2 AM triggers automatic investigation workflows.</p>
+                  </div>
+                  <div class="bg-white/60 dark:bg-surface-800/30 rounded-xl p-4 border border-amber-100 dark:border-amber-900/30">
+                    <h5 class="font-display font-bold text-sm text-amber-800 dark:text-amber-200 mb-2">Continuous Compliance</h5>
+                    <p class="text-xs text-surface-600 dark:text-surface-300 leading-relaxed">Rather than scrambling before annual audits, continuous audit logging means your compliance posture is always audit-ready. Automated reports can be generated for SOC 2, ISO 27001, and NIST 800-53 on demand.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Deep Dive 8: Audit Log Retention & Security -->
+              <div>
+                <h4 class="font-display font-bold text-amber-700 dark:text-amber-300 mb-2">&#x1F6E1;&#xFE0F; Audit Log Security &amp; Retention</h4>
+                <div class="grid sm:grid-cols-3 gap-3">
+                  <div class="bg-white/60 dark:bg-surface-800/30 rounded-xl p-3 border border-amber-100 dark:border-amber-900/30">
+                    <h5 class="font-display font-bold text-xs text-amber-800 dark:text-amber-200 mb-1">Immutability</h5>
+                    <p class="text-xs text-surface-600 dark:text-surface-300 leading-relaxed">Audit tables have UPDATE/DELETE revoked. Write-ahead logs are streamed to a separate, isolated storage system. Checksums verify integrity.</p>
+                  </div>
+                  <div class="bg-white/60 dark:bg-surface-800/30 rounded-xl p-3 border border-amber-100 dark:border-amber-900/30">
+                    <h5 class="font-display font-bold text-xs text-amber-800 dark:text-amber-200 mb-1">Retention Policy</h5>
+                    <p class="text-xs text-surface-600 dark:text-surface-300 leading-relaxed">Hot storage: 90 days (fast query). Warm: 1 year (compressed). Cold archive: 7 years (compliance). Auto-partitioned by month.</p>
+                  </div>
+                  <div class="bg-white/60 dark:bg-surface-800/30 rounded-xl p-3 border border-amber-100 dark:border-amber-900/30">
+                    <h5 class="font-display font-bold text-xs text-amber-800 dark:text-amber-200 mb-1">Meta-Auditing</h5>
+                    <p class="text-xs text-surface-600 dark:text-surface-300 leading-relaxed">Access to audit logs is itself audited. Only Director+ roles can query audit_events. Every query is logged as AUDIT_LOG_ACCESSED.</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </section>
+
       <!-- =============== TESTING CHECKLIST =============== -->
       <section id="checklist" class="fade-section mb-16">
         <div class="section-card bg-white dark:bg-surface-800/50 border border-surface-200 dark:border-surface-700/50 rounded-2xl p-6 md:p-10 shadow-sm">
@@ -2000,6 +2616,26 @@ app.put(<span class="text-emerald-400">'/api/docs/:id'</span>,
             <label class="check-item flex items-start gap-3 bg-surface-50 dark:bg-surface-900/40 rounded-xl px-4 py-3 cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-800/40 transition">
               <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-surface-300 dark:border-surface-600 text-brand-500 focus:ring-brand-500">
               <span class="text-sm text-surface-700 dark:text-surface-300">Events are logged for audit trail</span>
+            </label>
+            <label class="check-item flex items-start gap-3 bg-surface-50 dark:bg-surface-900/40 rounded-xl px-4 py-3 cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-800/40 transition">
+              <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-surface-300 dark:border-surface-600 text-brand-500 focus:ring-brand-500">
+              <span class="text-sm text-surface-700 dark:text-surface-300">All CRUD operations generate audit_events entries</span>
+            </label>
+            <label class="check-item flex items-start gap-3 bg-surface-50 dark:bg-surface-900/40 rounded-xl px-4 py-3 cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-800/40 transition">
+              <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-surface-300 dark:border-surface-600 text-brand-500 focus:ring-brand-500">
+              <span class="text-sm text-surface-700 dark:text-surface-300">PERMISSION_DENIED events logged with full gate context</span>
+            </label>
+            <label class="check-item flex items-start gap-3 bg-surface-50 dark:bg-surface-900/40 rounded-xl px-4 py-3 cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-800/40 transition">
+              <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-surface-300 dark:border-surface-600 text-brand-500 focus:ring-brand-500">
+              <span class="text-sm text-surface-700 dark:text-surface-300">DB triggers fire independently of application middleware</span>
+            </label>
+            <label class="check-item flex items-start gap-3 bg-surface-50 dark:bg-surface-900/40 rounded-xl px-4 py-3 cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-800/40 transition">
+              <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-surface-300 dark:border-surface-600 text-brand-500 focus:ring-brand-500">
+              <span class="text-sm text-surface-700 dark:text-surface-300">Audit table UPDATE/DELETE permissions revoked for app users</span>
+            </label>
+            <label class="check-item flex items-start gap-3 bg-surface-50 dark:bg-surface-900/40 rounded-xl px-4 py-3 cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-800/40 transition">
+              <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-surface-300 dark:border-surface-600 text-brand-500 focus:ring-brand-500">
+              <span class="text-sm text-surface-700 dark:text-surface-300">Keycloak login/logout events forwarded to audit_events</span>
             </label>
           </div>
         </div>
@@ -2214,6 +2850,7 @@ const tocSections = [
   { id: 'access-matrix', label: 'Access Matrix', icon: '📋' },
   { id: 'classification-ntk', label: 'Classification & NTK', icon: '🏷️' },
   { id: 'security', label: 'Best Practices', icon: '🔐' },
+  { id: 'auditing', label: 'Comprehensive Auditing', icon: '📝' },
   { id: 'checklist', label: 'Testing Checklist', icon: '✓' },
   { id: 'schema', label: 'Database Schema', icon: '🗄' },
 ];
@@ -2572,6 +3209,49 @@ const sectionData = [
     ]
   },
   {
+    id: 'auditing',
+    title: 'Comprehensive Auditing',
+    content: [
+      { type: 'p', text: 'Every action in a classified enterprise system must be recorded, attributable, and reviewable. This section covers a complete audit framework that logs all CRUD operations across every role, together with authentication events, role changes, classification gate decisions, and NTK approvals.' },
+      { type: 'h3', text: 'Why Every Operation Must Be Audited' },
+      { type: 'bullet', text: 'Regulatory Compliance — SOX, HIPAA, GDPR, and FedRAMP all mandate immutable audit trails for data access.' },
+      { type: 'bullet', text: 'Breach Detection — Audit logs are the first artifact forensic teams analyze during incident reconstruction.' },
+      { type: 'bullet', text: 'Insider Threat Deterrence — When users know every action is recorded, unauthorized access attempts drop dramatically.' },
+      { type: 'bullet', text: 'Non-Repudiation — Cryptographically linked log entries ensure a user cannot deny performing an action.' },
+      { type: 'h3', text: 'Audit Event Categories' },
+      { type: 'bullet', text: 'CRUD Operations: CREATE, READ, UPDATE, DELETE — all document operations with field-level diffs.' },
+      { type: 'bullet', text: 'Role & Access Events: ROLE_ASSIGNED, ROLE_REVOKED, ROLE_ESCALATED, PERMISSION_DENIED.' },
+      { type: 'bullet', text: 'Classification & NTK Events: CLASSIFICATION_CHECK, NTK_REQUESTED, NTK_APPROVED, NTK_DENIED, NTK_EXPIRED.' },
+      { type: 'bullet', text: 'Authentication Events: LOGIN_SUCCESS, LOGIN_FAILED, LOGOUT, TOKEN_REFRESHED.' },
+      { type: 'bullet', text: 'Share & Export Events: DOCUMENT_SHARED, SHARE_REVOKED, DOCUMENT_EXPORTED, BULK_EXPORT.' },
+      { type: 'bullet', text: 'System & Admin Events: POLICY_CHANGED, SCHEMA_ALTERED, CONFIG_UPDATED, AUDIT_LOG_ACCESSED.' },
+      { type: 'h3', text: 'Audit Trail Flow' },
+      { type: 'p', text: 'User Action → Middleware (capture context) → Audit Logger (enrich + validate) → Immutable Store (append-only table) → SIEM / Alerts (real-time monitor).' },
+      { type: 'h3', text: 'What Gets Audited Per Role' },
+      { type: 'table', headers: ['Audit Event', 'Employee', 'Manager', 'Director', 'Executive'],
+        rows: [
+          ['CREATE document',       '✓', '✓', '✓', '✓'],
+          ['READ document',         '✓', '✓', '✓', '✓'],
+          ['UPDATE document',       '✓', '✓', '✓', '✓'],
+          ['DELETE document',       '✓', '✓', '✓', '✓'],
+          ['ROLE_ASSIGNED',         '—', '✓', '✓', '✓'],
+          ['ROLE_REVOKED',          '—', '✓', '✓', '✓'],
+          ['NTK_APPROVED',          '—', '—', '✓', '✓'],
+          ['CLASSIFICATION_CHECK',  '✓', '✓', '✓', '✓'],
+          ['LOGIN / LOGOUT',        '✓', '✓', '✓', '✓'],
+          ['PERMISSION_DENIED',     '✓', '✓', '✓', '✓'],
+          ['DOCUMENT_SHARED',       '—', '✓', '✓', '✓'],
+          ['DOCUMENT_EXPORTED',     '✓', '✓', '✓', '✓'],
+          ['AUDIT_LOG_ACCESSED',    '—', '—', '✓', '✓'],
+        ]
+      },
+      { type: 'h3', text: 'Audit Log Security & Retention' },
+      { type: 'bullet', text: 'Immutability — Audit tables have UPDATE/DELETE revoked. Write-ahead logs are streamed to isolated storage with checksum verification.' },
+      { type: 'bullet', text: 'Retention Policy — Hot: 90 days (fast query), Warm: 1 year (compressed), Cold archive: 7 years (compliance). Auto-partitioned by month.' },
+      { type: 'bullet', text: 'Meta-Auditing — Access to audit logs is itself audited. Only Director+ roles can query audit_events.' },
+    ]
+  },
+  {
     id: 'access-matrix',
     title: 'Access Control Matrix',
     content: [
@@ -2615,6 +3295,7 @@ const deepDiveMap = {
   'phase7-9': 'phase7-deep',
   'demo-setup': 'demo-deep',
   'database-schema': 'schema-deep',
+  'auditing': 'auditing-deep',
   'classification-ntk': null,
 };
 
